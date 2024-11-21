@@ -5,7 +5,7 @@ import numpy as np
 
 MS_NUM = 5
 AIMS_NUM = 3
-NODE_NUM = 2
+NODE_NUM = 5
 USER_NUM =3
 RESOURCE = 3
 
@@ -69,9 +69,9 @@ class EDGE_NODE:
         self.id = id
         self.x = random.uniform(10, 100)
         self.y = random.uniform(20, 80)
-        self.cpu = random.randint(15, 25)
-        self.gpu = random.randint(0,5)
-        self.memory = random.randint(300,400)
+        self.cpu = random.randint(15, 25) * 5
+        self.gpu = random.randint(0,5) * 5
+        self.memory = random.randint(300,400) * 5
 
     def get_location(self):
         return self.x, self.y
