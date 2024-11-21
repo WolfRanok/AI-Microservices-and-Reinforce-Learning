@@ -120,7 +120,7 @@ class Agent:
         while True:
             action_probabilities = self.actor_target(state)
             flag, next_state, reward = self.environment_interaction.get_next_state_and_reword(state, action_probabilities)
-            print(reward, next_state)
+            # print(reward, next_state)
             if flag == 0:
                 break
             state = next_state
@@ -129,6 +129,7 @@ class Agent:
 
         print("算法执行次数：",num)
         self.environment_interaction.analysis_state(state)  # 测试专用
+        return state    # 返回最终方案
 
     def save_model(self):
         """
@@ -153,9 +154,9 @@ class Agent:
         :return:
         """
         # 训练
-        self.train_ddpg()
+        # self.train_ddpg()
         self.get_deterministic_deployment()
-        self.save_model()
+        # self.save_model()
 
 
 if __name__ == '__main__':
