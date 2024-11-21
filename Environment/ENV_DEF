@@ -3,9 +3,9 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-MS_NUM = 5
+MS_NUM = 4
 AIMS_NUM = 3
-NODE_NUM = 2
+NODE_NUM = 10
 USER_NUM =3
 RESOURCE = 3
 
@@ -101,10 +101,10 @@ class USER:
     def get_location(self):
         return  self.x, self.y
     def get_request(self):
-        """
+        '''
         用户会随机发出含有2-4个普通微服务和0-3个AI微服务的请求链
         :return:请求链，和用于判断微服务类型的标识符（0：普通微服务，1：AI微服务）
-        """
+        '''
         request_service = []
         request_service_mark = []
         ms_list = ms_initial()
@@ -191,6 +191,29 @@ def get_user_request(user):
         user_list[item], user_request_make_list[item] = item.get_request()
     return user, user_list, user_request_make_list
 
+def get_bandwidth_with_node():
+    '''
+    每一个节点都有自己的带宽资源，随机生成
+    :param node_list: 网络中节点集合
+    :return:
+    '''
+    bandwidth = []
+    for _ in range(NODE_NUM):
+        b = random.randint(5, 10)
+        bandwidth.append(b)
+    return bandwidth
+
+def get_data_with_ms():
+    '''
+    每一个节点都有自己的带宽资源，随机生成
+    :param node_list: 网络中节点集合
+    :return:
+    '''
+    data = []
+    for _ in range(MS_NUM+AIMS_NUM):
+        d = random.randint(2, 5)
+        data.append(d)
+    return data
 
 def cal_dis(node1,node2):
     disx = (node1.x - node2.x) ** 2
@@ -204,11 +227,66 @@ def cal_dis_user_node(user, node):
     dis = math.sqrt(disx + disy)
     return dis
 
+def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
+    """
+    确保节点完全连通，处理不连通的情况。
+    初始距离设为10，每次扩大范围增量为1
+    """
+    connected_lines = []
+    V = [[0] * NODE_NUM for _ in range(NODE_NUM)]
+    range_factor = 1
+    def is_fully_connected(lines, n):
+        """
+        检查图是否完全连通。
+        """
+        # 构建邻接表
+        adjacency_list = {i: [] for i in range(n)}
+        for line in lines:
+            node1, node2 = line
+            adjacency_list[node1].append(node2)
+            adjacency_list[node2].append(node1)
+
+        # 深度优先搜索检查连通性
+        visited = set()
+        stack = [0]
+        while stack:
+            current = stack.pop()
+            if current not in visited:
+                visited.add(current)
+                stack.extend(adjacency_list[current])
+
+        return len(visited) == n
+
+    while True:
+        for i in range(len(nodes)):
+            for j in range(len(nodes)):
+                if i != j:
+                    dist = cal_dis(nodes[i], nodes[j])
+                    if dist <= initial_range * range_factor and (i, j) not in connected_lines and (j, i) not in connected_lines:
+                        if sum(V[i])>2:
+                            # 减少服务器之间连接的稠密程度
+                            continue
+                        connected_lines.append((i, j))
+                        V[i][j]=1
+                        V[j][i]=1
+
+        if is_fully_connected(connected_lines, len(nodes)):
+            break  # 完全连通，结束循环
+        else:
+            range_factor += range_step
+
+    return connected_lines, V
+
 if __name__ == '__main__':
     ms = ms_initial()
     aims = aims_initial()
     user = user_initial()
     node = edge_initial()
+    for item in node:
+        print(item.id, end=' ')
+    print(' ')
+    B = get_bandwidth_with_node()
+    print("带宽", B)
     _,user_list, _= get_user_request(user)
     node_list = edge_initial()
     msalpha = get_ms_alpha(ms)
@@ -233,6 +311,14 @@ if __name__ == '__main__':
         x, y = i.get_location()
         user_x_list.append(x)
         user_y_list.append(y)
+    # 节点连接
+
+    connected_lines, V = connect_nodes_within_range(node_list, initial_range=10)
+    print(V)
+    for (node1, node2) in connected_lines:
+        node1, node2 = node_list[node1], node_list[node2]
+        plt.plot([node1.x, node2.x], [node1.y, node2.y], c='red', linestyle='-', linewidth=0.5)
+
     plt.scatter(user_x_list, user_y_list,c='blue')
     plt.tight_layout()
     plt.show()
