@@ -10,6 +10,7 @@ USER_NUM =3
 RESOURCE = 3
 
 random.seed(123)
+np.random.seed(123)
 class MS:
     '''
     基础微服务拥有两种资源类型
@@ -92,7 +93,7 @@ class USER:
     '''
     def __init__(self, id) -> None:
         self.id = id
-        self.lamda = random.randint(3, 6)
+        self.lamda = random.randint(100, 200)
         self.x = random.uniform(0, 150)
         self.y = random.uniform(0, 100)
 
@@ -210,8 +211,11 @@ def get_data_with_ms():
     :return:
     '''
     data = []
-    for _ in range(MS_NUM+AIMS_NUM):
+    for _ in range(MS_NUM):
         d = random.randint(2, 5)
+        data.append(d)
+    for _ in range(AIMS_NUM):
+        d = random.randint(10, 20)
         data.append(d)
     return data
 
@@ -260,15 +264,18 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     while True:
         for i in range(len(nodes)):
             for j in range(len(nodes)):
+                if i==j:
+                    V[i][j] = 1
                 if i != j:
                     dist = cal_dis(nodes[i], nodes[j])
                     if dist <= initial_range * range_factor and (i, j) not in connected_lines and (j, i) not in connected_lines:
-                        if sum(V[i])>2:
+                        if sum(V[i])>3:
                             # 减少服务器之间连接的稠密程度
                             continue
                         connected_lines.append((i, j))
                         V[i][j]=1
                         V[j][i]=1
+
 
         if is_fully_connected(connected_lines, len(nodes)):
             break  # 完全连通，结束循环
@@ -300,11 +307,17 @@ if __name__ == '__main__':
     '''
     x_list = []
     y_list = []
+    m = []
     for i in node_list:
         x, y = i.get_location()
         x_list.append(x)
         y_list.append(y)
+        m.append(i.id)
+        print(x,y,m)
     plt.scatter(x_list,y_list,c='red',marker='*')
+    for xi, yi, mi in zip(x_list, y_list,m):
+        # 给x和y添加偏移量，别和点重合在一起了
+        plt.text(xi, yi + 1, mi)
     user_x_list = []
     user_y_list = []
     for i in user_list:
@@ -315,6 +328,7 @@ if __name__ == '__main__':
 
     connected_lines, V = connect_nodes_within_range(node_list, initial_range=10)
     print(V)
+    print(connected_lines)
     for (node1, node2) in connected_lines:
         node1, node2 = node_list[node1], node_list[node2]
         plt.plot([node1.x, node2.x], [node1.y, node2.y], c='red', linestyle='-', linewidth=0.5)
