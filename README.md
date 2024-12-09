@@ -57,7 +57,7 @@
 定义了用于强化学习算法(Determinstic actor-critic algorithm)的两个神经网络actor和critic网络。
 两个网络中都需要包含 lstm 网络，全连接层，以保证效率。
 其中 actor 神经网络的定义中接受两个变量 `MA_AIMS_NUM` 和 `NODE_NUM` 两个变量，分别表示服务种类数量和节点数量。
-actor 的输入层是一个规模为` 1 * (MA_AIMS_NUM * NODE_NUM + MA_AIMS_NUM * NODE_NUM ** 2 + 3 * 2 * NODE_NUM)` 的一个一维向量。
+actor 的输入层是一个规模为` 1 * (MA_AIMS_NUM * NODE_NUM + 3 * 2 * NODE_NUM)` 的一个一维向量。
 输出的结果（即行动），是一个规模为 `MA_AIMS_NUM * NODE_NUM` 的一个矩阵，矩阵的每一行是一个概率选择，表示每一个微服务选择该节点的概率，所以这个矩阵的每一行的合为1
 
 Critic 网络对每一个行动给出一个评价。

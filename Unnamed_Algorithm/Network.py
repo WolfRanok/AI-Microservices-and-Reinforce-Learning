@@ -5,8 +5,6 @@ from torch import optim
 
 from Environment.ENV import *
 
-MA_AIMS_NUM = MS_NUM + AIMS_NUM # 总的服务数
-
 class Actor(nn.Module):
     def __init__(self, ma_aims_num, node_num):
         super(Actor, self).__init__()

@@ -27,7 +27,7 @@ class Environment_Interaction:
         :param index: 选择的微服务类型
         :param state: 状态
         :param action: 行动，即选择部署的节点
-        :return:
+        :return: bool 表示是否分配成功
         """
         # 分离得到部署情况和资源情况
         deploy = get_deploy(state)
