@@ -432,21 +432,9 @@ if __name__ == '__main__':
     state = initial_state()
     d= get_deploy(state)
     print(state)
-    
-    # 进行环境初始化
-    ms = ms_initial() # 基础微服务
-    aims = aims_initial() # AI微服务
-    all_ms = ms+aims # 所有的微服务集合，可以用下标来区别基础和AI
-    user = user_initial() # 用户初始化，每个用户包含一个服务请求
-    node_list = edge_initial() # 服务器初始化
-    ms_alpha = get_ms_alpha(ms) # 基础微服务处理速率
-    aims_alpha = get_aims_alpha(aims) # AI微服务处理速率
-    all_ms_alpha = ms_alpha+aims_alpha # 所有的微服务的处理速率集合，可以用下标来区别基础和AI
-    service_lamda = get_user_lamda(user) # 用户服务请求到达率
-    bandwidth = get_bandwidth_with_node() # 服务器带宽资源
-    data = get_data_with_ms() # 微服务数据大小
-    users,user_list, marker = get_user_request(user) # 获得用户集，用户请求集，服务请求标记集
-    # 环境初始化结束
+    # 初始化网络环境
+    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker,\
+        bandwidth, data, graph, connected_lines = environment_initialization() 
     print("用户集：",users)
     print("请求集：",user_list)
     print("标记集合", marker)
