@@ -71,7 +71,7 @@ class Agent:
                     break
 
                 # 部署未结束，继续生成下一个动作
-                next_action_probabilities = self.actor_target(next_state)
+                next_action_probabilities = self.actor(next_state)
 
                 ## 计算critic误差
                 target_q_values = reward + GAMMA * self.critic_target(next_state, next_action_probabilities)
