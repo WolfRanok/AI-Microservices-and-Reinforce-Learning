@@ -8,9 +8,9 @@ AIMS_NUM = 3
 NODE_NUM = 10
 USER_NUM =3
 RESOURCE = 3
-MA_AIMS_NUM = MS_NUM + AIMS_NUM # 总的服务数
 
 random.seed(123)
+np.random.seed(123)
 class MS:
     '''
     基础微服务拥有两种资源类型
@@ -93,7 +93,7 @@ class USER:
     '''
     def __init__(self, id) -> None:
         self.id = id
-        self.lamda = random.randint(3, 6)
+        self.lamda = random.randint(100, 200)
         self.x = random.uniform(0, 150)
         self.y = random.uniform(0, 100)
 
@@ -211,8 +211,11 @@ def get_data_with_ms():
     :return:
     '''
     data = []
-    for _ in range(MS_NUM+AIMS_NUM):
+    for _ in range(MS_NUM):
         d = random.randint(2, 5)
+        data.append(d)
+    for _ in range(AIMS_NUM):
+        d = random.randint(10, 20)
         data.append(d)
     return data
 
@@ -223,12 +226,6 @@ def cal_dis(node1,node2):
     return dis
 
 def cal_dis_user_node(user, node):
-    """
-    计算用户于服务器节点的距离
-    :param user:
-    :param node:
-    :return:
-    """
     disx = (node.x- user.x) ** 2
     disy = (node.y - user.y) ** 2
     dis = math.sqrt(disx + disy)
@@ -267,15 +264,18 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     while True:
         for i in range(len(nodes)):
             for j in range(len(nodes)):
+                if i==j:
+                    V[i][j] = 1
                 if i != j:
                     dist = cal_dis(nodes[i], nodes[j])
                     if dist <= initial_range * range_factor and (i, j) not in connected_lines and (j, i) not in connected_lines:
-                        if sum(V[i])>2:
+                        if sum(V[i])>3:
                             # 减少服务器之间连接的稠密程度
                             continue
                         connected_lines.append((i, j))
                         V[i][j]=1
                         V[j][i]=1
+
 
         if is_fully_connected(connected_lines, len(nodes)):
             break  # 完全连通，结束循环
@@ -283,6 +283,23 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
             range_factor += range_step
 
     return connected_lines, V
+
+def environment_initialization():
+    ms = ms_initial()  # 基础微服务
+    aims = aims_initial()  # AI微服务
+    all_ms = ms + aims  # 所有的微服务集合，可以用下标来区别基础和AI
+    user = user_initial()  # 用户初始化，每个用户包含一个服务请求
+    node_list = edge_initial()  # 服务器初始化
+    ms_alpha = get_ms_alpha(ms)  # 基础微服务处理速率
+    aims_alpha = get_aims_alpha(aims)  # AI微服务处理速率
+    all_ms_alpha = ms_alpha + aims_alpha  # 所有的微服务的处理速率集合，可以用下标来区别基础和AI
+    service_lamda = get_user_lamda(user)  # 用户服务请求到达率
+    bandwidth = get_bandwidth_with_node()  # 服务器带宽资源
+    data = get_data_with_ms()  # 微服务数据大小
+    users, user_list, marker = get_user_request(user)  # 获得用户集，用户请求集，服务请求标记集
+    connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)  # 初始化网络图和服务器连接
+    return all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker,\
+        bandwidth, data, graph, connected_lines
 
 if __name__ == '__main__':
     ms = ms_initial()
@@ -307,11 +324,17 @@ if __name__ == '__main__':
     '''
     x_list = []
     y_list = []
+    m = []
     for i in node_list:
         x, y = i.get_location()
         x_list.append(x)
         y_list.append(y)
+        m.append(i.id)
+        print(x,y,m)
     plt.scatter(x_list,y_list,c='red',marker='*')
+    for xi, yi, mi in zip(x_list, y_list,m):
+        # 给x和y添加偏移量，别和点重合在一起了
+        plt.text(xi, yi + 1, mi)
     user_x_list = []
     user_y_list = []
     for i in user_list:
@@ -322,6 +345,7 @@ if __name__ == '__main__':
 
     connected_lines, V = connect_nodes_within_range(node_list, initial_range=10)
     print(V)
+    print(connected_lines)
     for (node1, node2) in connected_lines:
         node1, node2 = node_list[node1], node_list[node2]
         plt.plot([node1.x, node2.x], [node1.y, node2.y], c='red', linestyle='-', linewidth=0.5)

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch import optim
 
 from Environment.ENV import *
+MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class Actor(nn.Module):
     def __init__(self, ma_aims_num, node_num):

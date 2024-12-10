@@ -155,7 +155,7 @@ class Agent:
         """
         # 训练
         # self.train_ddpg()
-        self.get_deterministic_deployment()
+        res_state = self.get_deterministic_deployment()  # 最终结果
         # self.save_model()
 
 

@@ -122,18 +122,33 @@ class Environment_Interaction:
         """
         self.ms_image = self.old_ms_image.copy()
 
-    def analysis_state(self, state):
+    def analysis_state(self, state, index=None, flag=False):
         """
         用于分析，某状态
         :param state:
+        :param flag:
+        :param index: 选择部署的微服务
         :return:
         """
-        print("每一种微服务资源所需情况如下：")
-        print(self.ms_image)
-        for i, s in enumerate(self.ms_aims):
-            print(f"服务{i}，CPU: {s.get_cpu()}, GPU: {s.get_gpu()},内存: {s.get_memory()}")
+        print("*" * 30, self.count, "*" * 30)
+        self.count += 1
 
-        print("当前待分配实例数：",self.ms_image)
+        if flag:
+            print("每一种微服务资源所需情况如下：")
+            for i, s in enumerate(self.ms_aims):
+                print(f"服务{i}，CPU: {s.get_cpu()}, GPU: {s.get_gpu()},内存: {s.get_memory()}")
+
+        if index:
+            s = self.ms_aims[index]
+            print(f"已结束对服务 {index} 的部署: CPU: {s.get_cpu()}, GPU: {s.get_gpu()},内存: {s.get_memory()}")
+
+        print("当前待分配实例数：\n", self.ms_image)
+
+        print("当前的部署情况：")
+        deploy = get_deploy(state).T
+        print("服务类型\t \t", '\t \t'.join([f"{i}" for i in range(MA_AIMS_NUM)]))
+        for i, node_deployment in enumerate(deploy):
+            print(f"服务器{i}\t|\t", '\t|\t'.join([str(int(x)) for x in node_deployment]))
 
         print("服务器资源状态（已用|剩余|总量）：")
         deploy = get_resource(state)
@@ -141,11 +156,13 @@ class Environment_Interaction:
         GUP = deploy[NODE_NUM * 2:NODE_NUM * 4]
         Memory = deploy[NODE_NUM * 4:]
         for i in range(NODE_NUM):
-            print(f"服务器{i}:CPU{CUP[i]} | {CUP[i+NODE_NUM]} | {CUP[i]+CUP[i+NODE_NUM]}\tGPU:{GUP[i]} | {GUP[i+NODE_NUM]} | {GUP[i]+GUP[i+NODE_NUM]}\t内存:{Memory[i]} | {Memory[i+NODE_NUM]} | {Memory[i+NODE_NUM]+Memory[i]}")
+            print(
+                f"服务器{i}: \tCPU{CUP[i]} | {CUP[i + NODE_NUM]} | {CUP[i] + CUP[i + NODE_NUM]} \tGPU:{GUP[i]} | {GUP[i + NODE_NUM]} | {GUP[i] + GUP[i + NODE_NUM]} \t内存:{Memory[i]} | {Memory[i + NODE_NUM]} | {Memory[i + NODE_NUM] + Memory[i]}")
+        print()
 
 
 
-    def __init__(self, ms_image, ms, aims):
+    def __init__(self, ms_image, all_ms):
         """
         初始化时，需要给实例数
         :param ms_image: 实例数镜像
@@ -155,7 +172,10 @@ class Environment_Interaction:
         self.ms_image = self.old_ms_image.copy()
 
         # 初始化服务
-        self.ms_aims = ms + aims
+        self.ms_aims = all_ms
+
+        # 计数器
+        self.count = 0
 
 
 def environment_interaction_ms_initial():
@@ -164,29 +184,22 @@ def environment_interaction_ms_initial():
     :return: None
     """
     # 制作一个待分配实例数
-    ms = ms_initial()
-    aims = aims_initial()
-    user = user_initial()
-    users, user_list, marke = get_user_request(user)
-    ms_image = get_ms_image(ms, aims, users, user_list, marke)
+    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
 
     # 初始化环境
-    env = Environment_Interaction(ms_image, ms, aims)
+    env = Environment_Interaction(ms_image, all_ms)
     return env
 
 
 if __name__ == '__main__':
     # 制作一个待分配实例数
-    ms = ms_initial()
-    aims = aims_initial()
-    user = user_initial()
-    node_list = edge_initial()
-    users, user_list, marke = get_user_request(user)
-    ms_image = get_ms_image(ms, aims, users, user_list, marke)
+    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
 
     # 初始化环境
     # print(ms_image, type(ms_image))
-    env = Environment_Interaction(ms_image, ms, aims)
+    env = Environment_Interaction(ms_image, all_ms)
     # print(env.option_ms())
 
     # 生成一个初始状态
@@ -198,7 +211,7 @@ if __name__ == '__main__':
 
     # 测试部分
     print("每一种微服务资源所需情况如下：")
-    for i, s in enumerate(ms + aims):
+    for i, s in enumerate(all_ms):
         print(f"服务{i}，所需资源:CPU:{s.get_cpu()}, GPU:{s.get_gpu()},内存：{s.get_memory()}")
     for _ in range(5):
         # print("当前状态:\n", state)

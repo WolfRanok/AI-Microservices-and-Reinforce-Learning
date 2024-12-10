@@ -4,7 +4,7 @@
 """
 from Environment.ENV import *
 from Environment.ENV_DEF import *
-
+MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class Random_Algorithm:
     def option_ms(self):
@@ -149,7 +149,7 @@ class Random_Algorithm:
             self.analysis_state(self.state, index=index)
 
 
-    def __init__(self, ms_image, ms, aims):
+    def __init__(self, ms_image, all_ms):
         """
         初始化需要提供，镜像需求，以及（AI）微服务类型对象
         :param ms_image:
@@ -158,21 +158,17 @@ class Random_Algorithm:
         """
         self.old_ms_image = ms_image.copy()
         self.ms_image = ms_image.copy()
-        self.ms_aims = ms + aims
+        self.ms_aims = all_ms
         self.count = 0 # 计数器
 
 if __name__ == '__main__':
     # 制作一个待分配实例数
-    ms = ms_initial()
-    aims = aims_initial()
-    user = user_initial()
-    node_list = edge_initial()
-    users, user_list, marke = get_user_request(user)
-    ms_image = get_ms_image(ms, aims, users, user_list, marke)
+    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
 
     # 初始化环境
     # print(ms_image, type(ms_image))
-    ra = Random_Algorithm(ms_image, ms, aims)
+    ra = Random_Algorithm(ms_image, all_ms)
 
     # 随机给出一个初试状态
     state = initial_state()
