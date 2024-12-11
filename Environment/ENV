@@ -72,8 +72,8 @@ def updata_state(state, action, ms_idx, all_ms):
     state_new[MA_AIMS_NUM][act_idx] += all_ms[ms_idx].cpu
     state_new[MA_AIMS_NUM + 1][act_idx] -= all_ms[ms_idx].cpu
     if ms_idx>=MS_NUM:
-        state_new[MS_NUM + AIMS_NUM + 2][act_idx] += all_ms[ms_idx].gpu
-        state_new[MS_NUM + AIMS_NUM + 3][act_idx] -= all_ms[ms_idx].gpu
+        state_new[MA_AIMS_NUM + 2][act_idx] += all_ms[ms_idx].gpu
+        state_new[MA_AIMS_NUM + 3][act_idx] -= all_ms[ms_idx].gpu
     state_new[MA_AIMS_NUM + 4][act_idx] += all_ms[ms_idx].memory
     state_new[MA_AIMS_NUM + 5][act_idx] -= all_ms[ms_idx].memory
     state_new = np.reshape(state_new, (1, (MA_AIMS_NUM + 2 * RESOURCE) * NODE_NUM))
