@@ -1,17 +1,21 @@
 import numpy as np
 from ENV_DEF import *
-
-random.seed(123)
-Tolerate_Time = 10
+# 1326
+random.seed(1326)
+np.random.seed(25)
+Ms_Tolerate_Time = 3
+Aims_Tolerate_Time = 5
 v = 100 # 波的速度
 c = 10000 # 光的速度
+all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, \
+    bandwidth, data, graph, connected_lines = environment_initialization()
 def initial_state():
     '''
-    deploy_state:(MS_NUM+AIMS_NUM)*NODE_NUM
-    rout:NODE_NUM*(MS_NUM+AIMS_NUM)*NODE_NUM
+    deploy_state:MA_AIMS_NUM*NODE_NUM
+    rout:NODE_NUM*MA_AIMS_NUM*NODE_NUM
     :return:
     '''
-    deploy_state = np.zeros(shape=(MS_NUM + AIMS_NUM, NODE_NUM))
+    deploy_state = np.zeros(shape=(MA_AIMS_NUM, NODE_NUM))
     # rout_state = np.zeros(shape=(NODE_NUM, MS_NUM + AIMS_NUM, NODE_NUM))
     CPU = np.zeros(shape=(2, NODE_NUM))
     GPU = np.zeros(shape=(2, NODE_NUM))
@@ -23,7 +27,7 @@ def initial_state():
         CPU[1][i] = edge_node.cpu  # 初始化剩余cpu资源
         GPU[1][i] = edge_node.gpu  # 初始化剩余gpu资源
         Memory[1][i] = edge_node.memory  # 初始化剩余memory资源
-    deploy_state = np.reshape(deploy_state, (1, (MS_NUM + AIMS_NUM) * NODE_NUM))
+    deploy_state = np.reshape(deploy_state, (1, MA_AIMS_NUM * NODE_NUM))
     # rout_state = np.reshape(rout_state, (1, NODE_NUM * (MS_NUM + AIMS_NUM) * NODE_NUM))
     CPU = np.reshape(CPU, (1, 2 * NODE_NUM))
     GPU = np.reshape(GPU, (1, 2 * NODE_NUM))
@@ -36,8 +40,8 @@ def initial_state():
     return state
 
 def get_deploy(state):
-    deploy = state[0:(MS_NUM+AIMS_NUM)*NODE_NUM]
-    deploy = np.reshape(deploy, ((MS_NUM+AIMS_NUM), NODE_NUM))
+    deploy = state[0:MA_AIMS_NUM*NODE_NUM]
+    deploy = np.reshape(deploy, (MA_AIMS_NUM, NODE_NUM))
     return deploy
 
 def get_resource(state):
@@ -46,44 +50,38 @@ def get_resource(state):
     :param state: state
     :return:
     """
-    resource = state[(MS_NUM + AIMS_NUM) * NODE_NUM:]
+    resource = state[MA_AIMS_NUM * NODE_NUM:]
 
     return resource
 
 # def get_rout(state):
 #     rout = []
 #     for i in range(NODE_NUM):
-#         rout_node = state[(MS_NUM+AIMS_NUM)*NODE_NUM+i*(MS_NUM+AIMS_NUM)*NODE_NUM
-#                           :(MS_NUM+AIMS_NUM)*NODE_NUM+(i+1)*(MS_NUM+AIMS_NUM)*NODE_NUM]
-#         rout_node = np.reshape(rout_node,((MS_NUM+AIMS_NUM), NODE_NUM))
+#         rout_node = state[MA_AIMS_NUM*NODE_NUM+i*MA_AIMS_NUM*NODE_NUM
+#                           :MA_AIMS_NUM*NODE_NUM+(i+1)*MA_AIMS_NUM*NODE_NUM]
+#         rout_node = np.reshape(rout_node,(MA_AIMS_NUM, NODE_NUM))
 #         rout.append(rout_node)
 #     return rout
 
 def updata_state(state, action, ms_idx, all_ms):
-    state_new = np.reshape(state, (MS_NUM+AIMS_NUM + 2 * RESOURCE, NODE_NUM))
+    state_new = np.reshape(state, (MA_AIMS_NUM + 2 * RESOURCE, NODE_NUM))
     action = np.reshape(action, (1, NODE_NUM))
     # CY: 确定性策略更新，每次选择value最大的行动
     act_idx = np.argmax(action)
     state_new[ms_idx][act_idx] += 1
-    state_new[MS_NUM+AIMS_NUM][act_idx] += all_ms[ms_idx].cpu
-    state_new[MS_NUM+AIMS_NUM + 1][act_idx] -= all_ms[ms_idx].cpu
+    state_new[MA_AIMS_NUM][act_idx] += all_ms[ms_idx].cpu
+    state_new[MA_AIMS_NUM + 1][act_idx] -= all_ms[ms_idx].cpu
     if ms_idx>=MS_NUM:
         state_new[MS_NUM + AIMS_NUM + 2][act_idx] += all_ms[ms_idx].gpu
         state_new[MS_NUM + AIMS_NUM + 3][act_idx] -= all_ms[ms_idx].gpu
-    state_new[MS_NUM+AIMS_NUM + 4][act_idx] += all_ms[ms_idx].memory
-    state_new[MS_NUM+AIMS_NUM + 5][act_idx] -= all_ms[ms_idx].memory
-    state_new = np.reshape(state_new, (1, (MS_NUM+AIMS_NUM + 2 * RESOURCE) * NODE_NUM))
+    state_new[MA_AIMS_NUM + 4][act_idx] += all_ms[ms_idx].memory
+    state_new[MA_AIMS_NUM + 5][act_idx] -= all_ms[ms_idx].memory
+    state_new = np.reshape(state_new, (1, (MA_AIMS_NUM + 2 * RESOURCE) * NODE_NUM))
     return state_new, act_idx
 
-def intermediate_reward():
-    d
-
-def final_reward():
-    d
-
-def get_ms_image(all_ms_alpha, users, requests, marker):
-    ms_image = np.zeros(MS_NUM+AIMS_NUM)
-    ms_lamda = np.zeros(MS_NUM+AIMS_NUM)
+def get_ms_image():
+    ms_image = np.zeros(MA_AIMS_NUM)
+    ms_lamda = np.zeros(MA_AIMS_NUM)
     # request_lamda = get_user_lamda(users)
     # print(request_lamda)
     for user in users:
@@ -95,12 +93,12 @@ def get_ms_image(all_ms_alpha, users, requests, marker):
                 ms_lamda[item1.id] += lamda
             else:
                 ms_lamda[MS_NUM+item1.id] += lamda
-    for i in range(MS_NUM+AIMS_NUM):
+    for i in range(MA_AIMS_NUM):
         rho = ms_lamda[i]/all_ms_alpha[i]
         ms_image[i] += math.ceil(rho)
     return ms_image
 
-def get_first_node(users,node_list):
+def get_first_node():
     '''
     获得服务请求接收节点集，拿到的是服务器的编号，但需要用到服务器的具体属性时，需要配合node_list使用
     :param users:
@@ -119,7 +117,7 @@ def get_first_node(users,node_list):
         node.append(node_idx)
     return node
 
-def optimize_rout_node(ms_node_dict, request, node_graph):
+def optimize_rout_node(ms_node_dict, request):
     '''
     去除不可达的节点
     :param ms_node_dict:
@@ -147,7 +145,7 @@ def optimize_rout_node(ms_node_dict, request, node_graph):
             for i in node1:
                 for j in node2:
                     # print("服务器id",i.id,j.id)
-                    if node_graph[i.id][j.id] != 0:
+                    if graph[i.id][j.id] != 0:
                         # print("yes")
                         lag[j] += 1
             print(lag)
@@ -160,7 +158,7 @@ def optimize_rout_node(ms_node_dict, request, node_graph):
         first_ms = ms_item
     return result
 
-def cal_probability(node2, ms, node_list, node_bandwidth, deploy):
+def cal_probability(node2, ms, ms_node_list, deploy):
     '''
     计算node1转发到node2上的转发概率
     :param node2:
@@ -172,13 +170,13 @@ def cal_probability(node2, ms, node_list, node_bandwidth, deploy):
     '''
     total_ma_image = 0
     total_bandwidth = 0
-    for item in node_list:
-        total_bandwidth += node_bandwidth[item.id]
+    for item in ms_node_list:
+        total_bandwidth += bandwidth[item.id]
         total_ma_image += deploy[ms.id][item.id]
-    p = (node_bandwidth[node2.id]+deploy[ms.id][node2.id])/(total_bandwidth+total_ma_image)
+    p = (bandwidth[node2.id]+deploy[ms.id][node2.id])/(total_bandwidth+total_ma_image)
     return ms, node2, p
 
-def get_each_request_rout(node_graph, deploy, bandwidth, node_list, users, requests, marker):
+def get_each_request_rout(deploy):
     '''
     根据部署方案和服务请求生成每一条服务请求的处理路径图，每一个节点表示服务器，每一个边表示转发概率
     第一个节点是固定的，通过get_first_node（）函数获得
@@ -188,7 +186,7 @@ def get_each_request_rout(node_graph, deploy, bandwidth, node_list, users, reque
     :return: 返回服务请求路由路径集合，每一条服务请求的路由路径图用邻接表存储。
     邻接表中用元组来表示路由转发(上一个节点，当前需要处理的微服务，当前节点，接收概率)
     '''
-    first_node_list = get_first_node(users,node_list)
+    first_node_list = get_first_node()
     all_user_rout = []
     for user in users:
         request = requests.get(user)
@@ -221,7 +219,7 @@ def get_each_request_rout(node_graph, deploy, bandwidth, node_list, users, reque
         #     node = ms_node_dict.get(item)
         #     print(node)
         # print("字典1",ms_node_dict)
-        ms_node_dict = optimize_rout_node(ms_node_dict, request, node_graph)
+        ms_node_dict = optimize_rout_node(ms_node_dict, request)
         # print("字典2",ms_node_dict)
         all_node_list = [] # 存储了路由转发图中所有出现的节点，节点id会有重复
         for item in ms_node_dict:
@@ -249,7 +247,7 @@ def get_each_request_rout(node_graph, deploy, bandwidth, node_list, users, reque
                     if graph[node.id][node1.id]!=0:
                         new_all_node_of_this_ms.append(node1)
                 for node2 in new_all_node_of_this_ms:
-                    _, _, p = cal_probability(node2, item, new_all_node_of_this_ms, bandwidth, deploy)
+                    _, _, p = cal_probability(node2, item, new_all_node_of_this_ms, deploy)
                     rout = (node.id, node2.id, item.id, p)
                     this_pre_node_ms_rout.append(rout)
                 ms_rout.append(this_pre_node_ms_rout)
@@ -259,7 +257,7 @@ def get_each_request_rout(node_graph, deploy, bandwidth, node_list, users, reque
         all_user_rout.append(this_user_rout_path_p)
     return all_user_rout
 
-def get_ms_node_lamda(state,users,requests,node_list,all_user_rout):
+def get_ms_node_lamda(deploy,all_user_rout):
     '''
     :param state: 一维向量
     :param users: list
@@ -267,16 +265,15 @@ def get_ms_node_lamda(state,users,requests,node_list,all_user_rout):
     :param node_list: list
     :return: 服务器上每个微服务的到达率
     '''
-    ms_node_lamda= np.zeros(shape=((MS_NUM+AIMS_NUM),NODE_NUM))
-    first_node = get_first_node(users,node_list)
-    deploy = get_deploy(state)
+    ms_node_lamda= np.zeros(shape=(MA_AIMS_NUM,NODE_NUM))
+    first_node = get_first_node()
     # rout = get_rout(state)
     # 微服务在服务器上的流量分为两个部分：直接流量和间接流量
     # 计算直接流量
     for item in users:
         request = requests.get(item)
-        if deploy[first_node[item.id]][request[0].id] != 0:
-            ms_node_lamda[first_node[item.id]][request[0].id] += item.lamda
+        if deploy[request[0].id][first_node[item.id]] != 0:
+            ms_node_lamda[request[0].id][first_node[item.id]] += item.lamda
     for idx1 in range(len(all_user_rout)):
         user = users[idx1]
         request = requests.get(user)
@@ -342,20 +339,21 @@ def jiechen(n):
             k *= i
         return k
 
-def cal_ms_delay(ms_deploy, ms_node_lamda, all_ms_alpha):
+def cal_ms_delay(deploy, all_user_rout):
     '''
     :param ms_deploy:
     :param a:
     :return:
     '''
-    ms_proc_delay = np.zeros(shape=((MS_NUM+AIMS_NUM),NODE_NUM))
-    for i in range(MS_NUM+AIMS_NUM):
+    ms_node_lamda = get_ms_node_lamda(deploy,all_user_rout)
+    ms_proc_delay = np.zeros(shape=(MA_AIMS_NUM,NODE_NUM))
+    for i in range(MA_AIMS_NUM):
         alpha = all_ms_alpha[i]
         for j in range(NODE_NUM):
-            if ms_deploy[i][j]==0:
+            if deploy[i][j]==0:
                 continue
             lamda = ms_node_lamda[i][j]
-            num = ms_deploy[i][j]
+            num = int(deploy[i][j])
             rh0 = lamda/alpha
             rh1 = lamda/(num*alpha)
             if rh1>0 and rh1<1:
@@ -368,10 +366,13 @@ def cal_ms_delay(ms_deploy, ms_node_lamda, all_ms_alpha):
                 p0 = math.pow((v1 + math.pow(rh0, num) / (v5 * (1 - rh1))), -1)
                 ms_proc_delay[i][j] = 1 / alpha + rh1 * math.pow(rh0, num) * p0 / (lamda * v5 * math.pow((1 - rh1), 2))
             elif rh1>=1:
-                ms_proc_delay[i][j] = Tolerate_Time
+                if i < MS_NUM:
+                    ms_proc_delay[i][j] = Ms_Tolerate_Time
+                else:
+                    ms_proc_delay[i][j] = Aims_Tolerate_Time
     return ms_proc_delay
 
-def cal_total_delay(users, requests, node_list, all_ms_proc_delay, all_user_rout, bandwidth, ms_data):
+def cal_total_delay(deploy, all_user_rout):
     '''
     网络时延的组成：发送时延和接收时延，等待时延，传输时延，传送时延
     :param users: 用户集
@@ -382,6 +383,8 @@ def cal_total_delay(users, requests, node_list, all_ms_proc_delay, all_user_rout
     :param ms_data: 数据大小
     :return:
     '''
+    print(deploy)
+    all_ms_proc_delay = cal_ms_delay(deploy,all_user_rout)
     total_ms_proc_delay = 0
     total_access_delay = 0
     total_reception_delay = 0
@@ -390,7 +393,7 @@ def cal_total_delay(users, requests, node_list, all_ms_proc_delay, all_user_rout
     for ms_delay in all_ms_proc_delay:
         total_ms_proc_delay += np.sum(ms_delay)
     # 发送延时计算如下：
-    first_node_list = get_first_node(users,node_list)
+    first_node_list = get_first_node()
     for idx in range(len(users)):
         first_node = node_list[first_node_list[idx]]
         total_access_delay += cal_dis_user_node(users[idx],first_node)/v
@@ -407,12 +410,12 @@ def cal_total_delay(users, requests, node_list, all_ms_proc_delay, all_user_rout
                     for item1 in row:
                         ms = request[idx]
                         if isinstance(ms, MS):
-                            data = ms_data[ms.id]
+                            this_data = data[ms.id]
                         else:
-                            data = ms_data[ms.id + MS_NUM]
+                            this_data = data[ms.id + MS_NUM]
                         pre_node = node_list[item1[0]]
                         this_node = node_list[item1[1]]
-                        trans_delay = data / bandwidth[this_node.id]
+                        trans_delay = this_data / bandwidth[this_node.id]
                         prop_delay = cal_dis(pre_node, this_node) / c
                         total_communication_delay += (trans_delay + prop_delay) * item1[3]
                         if idx == (len(rout)-1):
@@ -424,31 +427,17 @@ def cal_total_delay(users, requests, node_list, all_ms_proc_delay, all_user_rout
     print("发送时延",total_access_delay)
     print("接收时延",total_reception_delay)
     print("通信时延",total_communication_delay)
+    print("总时延",total_delay)
     return total_delay
 
 
 
 if __name__ == '__main__':
-    state = initial_state()
-    d= get_deploy(state)
-    print(state)
-    # 初始化网络环境
-    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker,\
-        bandwidth, data, graph, connected_lines = environment_initialization() 
-    print("用户集：",users)
-    print("请求集：",user_list)
-    print("标记集合", marker)
-    for item in users:
-        print("服务请求：")
-        for i in user_list.get(item):
-            print(i.id, end=' ')
-        print(' ')
-    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
 
-    connected_lines,graph = connect_nodes_within_range(node_list, initial_range=10)
+
     '''
-        输出用户与服务器之间的位置关系图
-        '''
+    输出用户与服务器之间的位置关系图
+    '''
     x_list = []
     y_list = []
     m = []
@@ -457,14 +446,13 @@ if __name__ == '__main__':
         x_list.append(x)
         y_list.append(y)
         m.append(i.id)
-        print(x, y, m)
     plt.scatter(x_list, y_list, c='red', marker='*')
     for xi, yi, mi in zip(x_list, y_list, m):
         # 给x和y添加偏移量，别和点重合在一起了
         plt.text(xi, yi + 1, mi)
     user_x_list = []
     user_y_list = []
-    for i in user_list:
+    for i in requests:
         x, y = i.get_location()
         user_x_list.append(x)
         user_y_list.append(y)
@@ -477,6 +465,23 @@ if __name__ == '__main__':
     plt.scatter(user_x_list, user_y_list, c='blue')
     plt.tight_layout()
     plt.show()
+    state = initial_state()
+    print(state)
+    # 初始化网络环境
+    print("用户集：",users)
+    print("请求集：",requests)
+    print("标记集合", marker)
+
+    for item in users:
+        print("请求到达率",item.lamda)
+        print("服务请求：")
+        for i in requests.get(item):
+            print(i.id, end=' ')
+        print(' ')
+    ms_image = get_ms_image() # all_ms_alpha, users, requests, marker
+    print(ms_image)
+    ms_idx = np.argmax(ms_image)
+    print(ms_idx)
 
     print("graph",graph)
     deploy = []  # 这里随机生成用作测试
@@ -485,7 +490,7 @@ if __name__ == '__main__':
         deploy_ms = np.random.randint(low=0, high=5, size=NODE_NUM)
         deploy.append(deploy_ms)
     print("服务部署方案",deploy)
-    rout = get_each_request_rout(graph, deploy, bandwidth, node_list, users, user_list, marker)
+    rout = get_each_request_rout(deploy)
     for i in range(len(users)):
         print("用户",i,"的路由转发表")
         for item in rout[i]:
@@ -493,7 +498,7 @@ if __name__ == '__main__':
     # print(rout[0])
     # print(rout[1])
     # print(rout[2])
-    ms_node_lamda=get_ms_node_lamda(state,users,user_list,node_list,rout)
+    ms_node_lamda=get_ms_node_lamda(deploy,rout)
     print("请求到达率",ms_node_lamda)
     for u in users:
         print(u.lamda)
@@ -501,8 +506,10 @@ if __name__ == '__main__':
     for item in ms_node_lamda:
         total += sum(item)
     print(total)
-    ms_delay = cal_ms_delay(deploy, ms_node_lamda, all_ms_alpha)
-    print("微服务处理时延：",ms_delay)
     print(data)
-    total_delay = cal_total_delay(users,user_list,node_list,ms_delay,rout,bandwidth,data)
+    total_delay = cal_total_delay(deploy,rout)
     print(total_delay)
+    print(get_ms_image())
+
+
+
