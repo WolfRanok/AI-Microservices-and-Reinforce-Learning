@@ -10,7 +10,7 @@ GAMMA = 0.95            # 衰减率[0-1]
 ACTOR_LR = 1e-4       # actor网络的学习率
 CRITIC_LR = 1e-3      # critic网络的学习率
 TAU = 0.005  # 目标网络软更新系数，用于软更新
-
+MAX_DEPLOY_COUNT = 20  # 连续超过指定次数没有部署成功则认为当前节点无法部署
 """
 经验回放：用于打破样本中的时间序列，但是如果神经网络中定义了lstm层，则需要谨慎使用
 """
@@ -59,6 +59,7 @@ class Agent:
             state = initial_state() # 初始化状态
             self.environment_interaction.refresh()  # 刷新部署需求
             episode_count = 0   # 记录当前迭代的长度
+            fail_count = 0  # 记录失败次数
 
             while True:
                 # 产生动作，和下一个状态
@@ -100,6 +101,15 @@ class Agent:
 
                 episode_count += 1 # 记录次数
 
+                ## 防死循环机制
+                # 当出现一个服务在所有的服务器上都没法部署时，放弃部署该节点
+                # 处理方式是记录当前部署失败的次数，超过指定次数后，放弃部署该服务
+                fail_count = fail_count + 1 if reward == PUNISHMENT_DEPLOY_FAIL else 0
+                if fail_count > MAX_DEPLOY_COUNT:
+                    fail_count = 0
+                    self.environment_interaction.pass_round()   # 跳过当前部署
+
+
             print(f"第 {episode} 迭代执行了 {episode_count} 次训练")
 
         print("训练完成")
@@ -117,17 +127,28 @@ class Agent:
         self.environment_interaction.analysis_state(state)  # 测试专用
 
         num = 0
+        fail_count = 0
+        fail_ms_count = 0  # 记录没有被部署上的服务个数
         while True:
             action_probabilities = self.actor_target(state)
             flag, next_state, reward = self.environment_interaction.get_next_state_and_reword(state, action_probabilities)
             # print(reward, next_state)
-            if flag == 0:
-                break
+            if flag == 0: break
+
             state = next_state
 
             num += 1
 
-        print("算法执行次数：",num)
+            ## 防死循环机制
+            # 当出现一个服务在所有的服务器上都没法部署时，放弃部署该节点
+            # 处理方式是记录当前部署失败的次数，超过指定次数后，放弃部署该服务
+            fail_count = fail_count + 1 if reward == PUNISHMENT_DEPLOY_FAIL else 0
+            if fail_count > MAX_DEPLOY_COUNT:
+                fail_count = 0
+                self.environment_interaction.pass_round()  # 跳过当前部署
+                fail_ms_count += 1
+
+        print(f"算法执行次数 {num} ,一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上",)
         self.environment_interaction.analysis_state(state)  # 测试专用
         return state    # 返回最终方案
 

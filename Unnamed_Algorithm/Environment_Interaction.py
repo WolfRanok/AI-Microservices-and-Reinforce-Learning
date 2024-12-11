@@ -115,6 +115,13 @@ class Environment_Interaction:
         else:  # 部署失败, 基于惩罚
             return PUNISHMENT_DEPLOY_FAIL
 
+    def pass_round(self):
+        """
+        当节点无法部署时使用，跳过当前一轮服务部署
+        :return: None
+        """
+        self.ms_image[self.index] -= 1
+
     def refresh(self):
         """
         刷新，即重新分配实例数
@@ -170,7 +177,7 @@ class Environment_Interaction:
         # 初始化资源镜像
         self.old_ms_image = ms_image.copy()
         self.ms_image = self.old_ms_image.copy()
-
+        self.sum_ms_aims = int(sum(self.old_ms_image))   # 待部署的服务总数
         # 初始化服务
         self.ms_aims = all_ms
 

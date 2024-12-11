@@ -6,7 +6,7 @@ import numpy as np
 MS_NUM = 4
 AIMS_NUM = 3
 NODE_NUM = 10
-USER_NUM =3
+USER_NUM = 3
 RESOURCE = 3
 
 random.seed(123)

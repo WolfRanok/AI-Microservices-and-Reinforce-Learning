@@ -60,7 +60,7 @@ class Random_Algorithm:
         GUP = deploy[NODE_NUM * 2:NODE_NUM * 4]
         Memory = deploy[NODE_NUM * 4:]
         for i in range(NODE_NUM):
-            print(f"服务器{i}: \tCPU{CUP[i]} | {CUP[i+NODE_NUM]} | {CUP[i]+CUP[i+NODE_NUM]} \tGPU:{GUP[i]} | {GUP[i+NODE_NUM]} | {GUP[i]+GUP[i+NODE_NUM]} \t内存:{Memory[i]} | {Memory[i+NODE_NUM]} | {Memory[i+NODE_NUM]+Memory[i]}")
+            print(f"服务器{i}: \tCPU：{CUP[i]} | {CUP[i+NODE_NUM]} | {CUP[i]+CUP[i+NODE_NUM]} \tGPU:{GUP[i]} | {GUP[i+NODE_NUM]} | {GUP[i]+GUP[i+NODE_NUM]} \t内存:{Memory[i]} | {Memory[i+NODE_NUM]} | {Memory[i+NODE_NUM]+Memory[i]}")
         print()
 
     def allocate_resources(self, index, state, node):
@@ -118,7 +118,9 @@ class Random_Algorithm:
         self.analysis_state(self.state, flag=True)  # 查看一下初试状态
         self.refresh()  # 状态刷新
 
-        while True:
+        count = 0  # 计数器
+
+        while True:  # 开始部署
             # 选择待分配的节点
             index = self.option_ms()
 
@@ -128,25 +130,27 @@ class Random_Algorithm:
                 break
 
             # 对于指定的微服务随机选择一个节点进行部署，直到部署成功
-            node_list = list(range(MA_AIMS_NUM))  # 总的服务数: MA_AIMS_NUM = MS_NUM + AIMS_NUM
+            node_list = list(range(NODE_NUM))  # 总的服务数: MA_AIMS_NUM = MS_NUM + AIMS_NUM
             node = random.choice(node_list)
 
+            # 针对某一个服务的部署
             while not self.allocate_resources(index, self.state, node):
                 # 分配失败则重新删除节点
                 node_list.remove(node)
 
                 # 说明没有可以用的服务节点，当前节点无法完成分配
                 if not node_list:
-                    print("该服务节点无法分配，其所需资源没有服务器符合要求")
+                    # print("该服务节点无法分配，其所需资源没有服务器符合要求")
                     self.ms_image[index] -= 1
                     break
-
+                count += 1
 
                 # 重新选择一个节点进行部署
                 node = random.choice(node_list)
 
-            # 分析部署情况
-            self.analysis_state(self.state, index=index)
+        print("算法迭代次数：", count)
+        # 分析部署情况
+        self.analysis_state(self.state)
 
 
     def __init__(self, ms_image, all_ms):
