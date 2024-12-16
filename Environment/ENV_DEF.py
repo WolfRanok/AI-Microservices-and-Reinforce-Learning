@@ -6,8 +6,9 @@ import numpy as np
 MS_NUM = 4
 AIMS_NUM = 3
 NODE_NUM = 10
-USER_NUM = 3
+USER_NUM = 10
 RESOURCE = 3
+MA_AIMS_NUM = MS_NUM+AIMS_NUM
 
 random.seed(123)
 np.random.seed(123)
@@ -93,7 +94,7 @@ class USER:
     '''
     def __init__(self, id) -> None:
         self.id = id
-        self.lamda = random.randint(100, 200)
+        self.lamda = random.randint(3,10)
         self.x = random.uniform(0, 150)
         self.y = random.uniform(0, 100)
 
@@ -249,7 +250,6 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
             node1, node2 = line
             adjacency_list[node1].append(node2)
             adjacency_list[node2].append(node1)
-
         # 深度优先搜索检查连通性
         visited = set()
         stack = [0]
@@ -260,7 +260,6 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
                 stack.extend(adjacency_list[current])
 
         return len(visited) == n
-
     while True:
         for i in range(len(nodes)):
             for j in range(len(nodes)):
@@ -275,8 +274,6 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
                         connected_lines.append((i, j))
                         V[i][j]=1
                         V[j][i]=1
-
-
         if is_fully_connected(connected_lines, len(nodes)):
             break  # 完全连通，结束循环
         else:
@@ -287,12 +284,12 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
 def environment_initialization():
     ms = ms_initial()  # 基础微服务
     aims = aims_initial()  # AI微服务
-    all_ms = ms + aims  # 所有的微服务集合，可以用下标来区别基础和AI
+    all_ms = np.append(ms,aims)  # 所有的微服务集合，可以用下标来区别基础和AI
     user = user_initial()  # 用户初始化，每个用户包含一个服务请求
     node_list = edge_initial()  # 服务器初始化
     ms_alpha = get_ms_alpha(ms)  # 基础微服务处理速率
     aims_alpha = get_aims_alpha(aims)  # AI微服务处理速率
-    all_ms_alpha = ms_alpha + aims_alpha  # 所有的微服务的处理速率集合，可以用下标来区别基础和AI
+    all_ms_alpha = np.append(ms_alpha, aims_alpha)  # 所有的微服务的处理速率集合，可以用下标来区别基础和AI
     service_lamda = get_user_lamda(user)  # 用户服务请求到达率
     bandwidth = get_bandwidth_with_node()  # 服务器带宽资源
     data = get_data_with_ms()  # 微服务数据大小

@@ -108,8 +108,10 @@ class Environment_Interaction:
         :param state: 状态，可以用于再部署完成的情况下计算时延
         :return: 一个整数，用于表示rework
         """
-        if flag == 0:  # 部署完成，根据时延计算大奖励
-            return 10
+        if flag == 0:  # 部署完成，根据时延计算大奖励 + 部署成功的小奖励
+            deploy = get_deploy(state)
+            rout = get_each_request_rout(deploy)
+            return cal_total_delay(deploy, rout) + 1 / self.old_ms_image[self.index]
         elif flag == 1:  # 分配成功，给与小奖励
             return 1 / self.old_ms_image[self.index]
         else:  # 部署失败, 基于惩罚
@@ -164,7 +166,7 @@ class Environment_Interaction:
         Memory = deploy[NODE_NUM * 4:]
         for i in range(NODE_NUM):
             print(
-                f"服务器{i}: \tCPU{CUP[i]} | {CUP[i + NODE_NUM]} | {CUP[i] + CUP[i + NODE_NUM]} \tGPU:{GUP[i]} | {GUP[i + NODE_NUM]} | {GUP[i] + GUP[i + NODE_NUM]} \t内存:{Memory[i]} | {Memory[i + NODE_NUM]} | {Memory[i + NODE_NUM] + Memory[i]}")
+                f"服务器{i}: \tCPU:{CUP[i]} | {CUP[i + NODE_NUM]} | {CUP[i] + CUP[i + NODE_NUM]} \tGPU:{GUP[i]} | {GUP[i + NODE_NUM]} | {GUP[i] + GUP[i + NODE_NUM]} \t内存:{Memory[i]} | {Memory[i + NODE_NUM]} | {Memory[i + NODE_NUM] + Memory[i]}")
         print()
 
 
@@ -191,8 +193,9 @@ def environment_interaction_ms_initial():
     :return: None
     """
     # 制作一个待分配实例数
-    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
-    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
+    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    # ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
+    ms_image = get_ms_image()
 
     # 初始化环境
     env = Environment_Interaction(ms_image, all_ms)
@@ -201,8 +204,9 @@ def environment_interaction_ms_initial():
 
 if __name__ == '__main__':
     # 制作一个待分配实例数
-    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
-    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
+    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    # ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
+    ms_image = get_ms_image()
 
     # 初始化环境
     # print(ms_image, type(ms_image))

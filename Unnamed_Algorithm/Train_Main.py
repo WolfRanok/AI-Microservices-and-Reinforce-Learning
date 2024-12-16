@@ -5,11 +5,11 @@ from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
 
-ITERATION_NUM = 100    # 训练轮数
+ITERATION_NUM = 50    # 训练轮数
 GAMMA = 0.95            # 衰减率[0-1]
 ACTOR_LR = 1e-4       # actor网络的学习率
 CRITIC_LR = 1e-3      # critic网络的学习率
-TAU = 0.005  # 目标网络软更新系数，用于软更新
+TAU = 0.05  # 目标网络软更新系数，用于软更新
 MAX_DEPLOY_COUNT = 20  # 连续超过指定次数没有部署成功则认为当前节点无法部署
 """
 经验回放：用于打破样本中的时间序列，但是如果神经网络中定义了lstm层，则需要谨慎使用
@@ -49,6 +49,20 @@ class Agent:
         else:
             self.environment_interaction = environment_interaction
 
+    def show_parameters(self):
+        """
+        用于可视化模型参数
+        :return: None
+        """
+        print("actor_target 模型参数：")
+        for name, param in self.actor.named_parameters():
+            print(param.data)
+            # print(param.grad)
+
+        # print("critic_target 模型参数：")
+        # for name, param in self.actor_target.named_parameters():
+        #     print(param.data)
+            # print(param.grad)
     def train_ddpg(self):
         """
         执行训练
@@ -69,6 +83,7 @@ class Agent:
                 # 部署结束
                 if flag == 0:
                     # print(state)   # 查看状态
+                    print("当前部署得到的延迟奖励为：", reward)   # 查看奖励
                     break
 
                 # 部署未结束，继续生成下一个动作
@@ -99,6 +114,9 @@ class Agent:
                 for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
                     target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
 
+                # 更新状态
+                state = next_state.copy()
+                # self.environment_interaction.analysis_state(state) # 检查状态
                 episode_count += 1 # 记录次数
 
                 ## 防死循环机制
@@ -110,7 +128,8 @@ class Agent:
                     self.environment_interaction.pass_round()   # 跳过当前部署
 
 
-            print(f"第 {episode} 迭代执行了 {episode_count} 次训练")
+            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练")
+            # self.show_parameters()
 
         print("训练完成")
     def get_deterministic_deployment(self, state=None):
@@ -175,9 +194,9 @@ class Agent:
         :return:
         """
         # 训练
-        # self.train_ddpg()
+        self.train_ddpg()
         res_state = self.get_deterministic_deployment()  # 最终结果
-        # self.save_model()
+        self.save_model()
 
 
 if __name__ == '__main__':

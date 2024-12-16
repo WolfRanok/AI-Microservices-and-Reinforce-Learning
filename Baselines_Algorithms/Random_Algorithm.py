@@ -167,8 +167,8 @@ class Random_Algorithm:
 
 if __name__ == '__main__':
     # 制作一个待分配实例数
-    all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
-    ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
+    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    ms_image = get_ms_image()
 
     # 初始化环境
     # print(ms_image, type(ms_image))
