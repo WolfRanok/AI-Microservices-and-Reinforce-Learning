@@ -6,7 +6,7 @@ import numpy as np
 MS_NUM = 4
 AIMS_NUM = 3
 NODE_NUM = 10
-USER_NUM = 10
+USER_NUM = 3
 RESOURCE = 3
 MA_AIMS_NUM = MS_NUM+AIMS_NUM
 
@@ -72,7 +72,7 @@ class EDGE_NODE:
         self.x = random.uniform(10, 100)
         self.y = random.uniform(20, 80)
         self.cpu = random.randint(15, 25)
-        self.gpu = random.randint(0,5)
+        self.gpu = random.randint(0,20)
         self.memory = random.randint(300,400)
 
     def get_location(self):
@@ -94,7 +94,7 @@ class USER:
     '''
     def __init__(self, id) -> None:
         self.id = id
-        self.lamda = random.randint(3,10)
+        self.lamda = random.randint(3,6)
         self.x = random.uniform(0, 150)
         self.y = random.uniform(0, 100)
 
@@ -112,7 +112,7 @@ class USER:
         ms_list = ms_initial()
         aims_list = aims_initial()
         num_of_MS = random.randint(2, 4)
-        num_of_AIMS = random.randint(0, 3)
+        num_of_AIMS = random.randint(0, 2)
         for _ in range(num_of_MS):
             ms = random.choice(ms_list)
             request_service.append(ms)
@@ -294,9 +294,9 @@ def environment_initialization():
     bandwidth = get_bandwidth_with_node()  # 服务器带宽资源
     data = get_data_with_ms()  # 微服务数据大小
     users, user_list, marker = get_user_request(user)  # 获得用户集，用户请求集，服务请求标记集
-    connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)  # 初始化网络图和服务器连接
+    # connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)  # 初始化网络图和服务器连接
     return all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker,\
-        bandwidth, data, graph, connected_lines
+        bandwidth, data
 
 if __name__ == '__main__':
     ms = ms_initial()
