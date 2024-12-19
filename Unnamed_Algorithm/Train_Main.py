@@ -7,14 +7,15 @@ from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
 
-ITERATION_NUM = 100  # 训练轮数
+ITERATION_NUM = 500  # 训练轮数
 GAMMA = 0.95  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率
 TAU = 0.05  # 目标网络软更新系数，用于软更新
 MAX_DEPLOY_COUNT = 20  # 连续超过指定次数没有部署成功则认为当前节点无法部署
-CAPACITY = 100 * (NODE_NUM * MA_AIMS_NUM + 3 * NODE_NUM)  # 经验回放池的大小
 BATCH_SIZE = 64  # 一个批次中的数据量大小（用于off policy）
+CAPACITY = BATCH_SIZE * 100  # 经验回放池的大小
+torch.autograd.set_detect_anomaly(True)
 
 """
 经验回放：用于打破样本中的时间序列，但是如果神经网络中定义了lstm层，则需要谨慎使用
@@ -34,7 +35,7 @@ class ReplayBuffer:
         :return: None
         """
         # detach() 可以断开梯度，从而将不带梯度的数据放入经验池
-        self.buffer.append((state, action.detach(), reward, next_state, next_action.detach()))
+        self.buffer.append((state.copy(), action, reward, next_state.copy(), next_action))
 
     def sample(self, batch_size=BATCH_SIZE):
         """
@@ -218,7 +219,6 @@ class Agent:
         执行off_policy算法的训练
         :return: None
         """
-
         # 执行迭代，每一轮迭代结束以部署完成为标准
         for episode in range(ITERATION_NUM):
             state = initial_state()  # 初始化状态
@@ -239,10 +239,9 @@ class Agent:
                 else:  # 继续生成下一个动作
                     next_action_probabilities = self.actor(next_state)
 
-                # 添加样本
+                # 执行训练模型的训练
                 self.replay_buffer.add(state, action_probabilities, reward, next_state, next_action_probabilities)
-
-                ## 执行训练
+                # 执行软更新
                 self.off_train()
 
                 episode_count += 1  # 记录次数
@@ -250,7 +249,6 @@ class Agent:
                 # 部署结束退出循环
                 if self.environment_interaction.is_it_over():
                     break
-
 
                 # 更新状态
                 state = next_state.copy()
@@ -371,8 +369,8 @@ class Agent:
         self.load_model()
 
         # 训练
-        # self.train_ddpg_on_policy()
-        self.train_ddpg_off_policy()
+        self.train_ddpg_on_policy()
+        # self.train_ddpg_off_policy()
         # res_state = self.get_deterministic_deployment()  # 最终结果
 
         # 保存模型
@@ -381,4 +379,8 @@ class Agent:
 
 if __name__ == '__main__':
     agent = Agent()
+    # print(agent.actor_target(state))
     agent.run()
+
+    # print(agent.actor_target(state))
+
