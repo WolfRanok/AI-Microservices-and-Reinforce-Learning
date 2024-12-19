@@ -1,12 +1,13 @@
 """
 该文件用于执行模型的训练
 """
+import os.path
 from collections import deque
 from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
 
-ITERATION_NUM = 500  # 训练轮数
+ITERATION_NUM = 100  # 训练轮数
 GAMMA = 0.95  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率
@@ -32,6 +33,7 @@ class ReplayBuffer:
         :param next_action: 下一个动作
         :return: None
         """
+        # detach() 可以断开梯度，从而将不带梯度的数据放入经验池
         self.buffer.append((state, action.detach(), reward, next_state, next_action.detach()))
 
     def sample(self, batch_size=BATCH_SIZE):
@@ -346,21 +348,34 @@ class Agent:
 
     def load_model(self):
         """
-        用于加载模型
+        当模型存在时，用于加载模型
         :return: None
         """
-        self.actor_target.load_state_dict(torch.load(f"Model/actor_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth"))
-        self.critic_target.load_state_dict(torch.load(f"Model/critic_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth"))
+        actor_url = f"Model/actor_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth"
+        critic_url = f"Model/critic_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth"
+
+        if os.path.exists(actor_url) and os.path.exists(critic_url):
+            self.actor_target.load_state_dict(torch.load(actor_url))
+            self.critic_target.load_state_dict(torch.load(critic_url))
+
+            # 网络复制
+            self.actor.load_state_dict(self.actor_target.state_dict())
+            self.critic.load_state_dict(self.critic_target.state_dict())
 
     def run(self):
         """
         按照全部部署完一次，算作迭代一次
         :return:
         """
+        # 读取模型
+        self.load_model()
+
         # 训练
         # self.train_ddpg_on_policy()
         self.train_ddpg_off_policy()
         # res_state = self.get_deterministic_deployment()  # 最终结果
+
+        # 保存模型
         self.save_model()
 
 
