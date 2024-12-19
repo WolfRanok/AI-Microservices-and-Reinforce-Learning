@@ -1,6 +1,7 @@
 """
 该文件用于执行模型的训练
 """
+from collections import deque
 from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
@@ -11,14 +12,39 @@ ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率
 TAU = 0.05  # 目标网络软更新系数，用于软更新
 MAX_DEPLOY_COUNT = 20  # 连续超过指定次数没有部署成功则认为当前节点无法部署
+CAPACITY = 100 * (NODE_NUM * MA_AIMS_NUM + 3 * NODE_NUM)  # 经验回放池的大小
+BATCH_SIZE = 64  # 一个批次中的数据量大小（用于off policy）
+
 """
 经验回放：用于打破样本中的时间序列，但是如果神经网络中定义了lstm层，则需要谨慎使用
 """
-
-
 class ReplayBuffer:
     def __init__(self, capacity):
-        pass
+        self.buffer = deque(maxlen=capacity)
+
+    def add(self, state, action, reward, next_state, next_action):
+        """
+        添加样本
+        :param state: 当前状态
+        :param action: 当前动作
+        :param reward: 奖励
+        :param next_state: 下一个状态
+        :param next_action: 下一个动作
+        :return: None
+        """
+        self.buffer.append((state, action.detach(), reward, next_state, next_action.detach()))
+
+    def sample(self, batch_size=BATCH_SIZE):
+        """
+        采样
+        :param batch_size:
+        :return:
+        """
+        batch = random.sample(self.buffer, batch_size)
+        return batch
+
+    def __len__(self):
+        return len(self.buffer)
 
 
 class Agent:
@@ -30,6 +56,9 @@ class Agent:
 
     # 环境
     environment_interaction = None
+
+    # 经验回放池
+    replay_buffer = None
 
     def __init__(self):
         # 模型初始化
@@ -45,6 +74,9 @@ class Agent:
         # 优化器定义
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=ACTOR_LR)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=CRITIC_LR)
+
+        # 经验回放的定义
+        self.replay_buffer = ReplayBuffer(CAPACITY)
 
     def init_environment(self):
         """
@@ -68,12 +100,51 @@ class Agent:
         #     print(param.data)
         # print(param.grad)
 
-    def train_ddpg(self):
+    def train_model(self, state, action_probabilities, reward, next_state, next_action_probabilities):
         """
-        执行训练
+        执行一次训练
+        :param state: 当前状态
+        :param action_probabilities: 当前状态的行动
+        :param reward: 回报
+        :param next_state: 下一个状态
+        :param next_action_probabilities: 下一个状态的行动
         :return: None
         """
+        ## 计算critic误差
+        target_q_values = reward + GAMMA * self.critic_target(next_state, next_action_probabilities)
+        current_q_values = self.critic(state, action_probabilities)
+        critic_loss = nn.MSELoss()(current_q_values, target_q_values)
 
+        ## 训练critic网络
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward(retain_graph=True)
+        self.critic_optimizer.step()
+
+        ## 计算actor误差
+        actor_loss = -self.critic(state, action_probabilities).mean()
+
+        ## 训练Actor网络
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward(retain_graph=True)
+        self.actor_optimizer.step()
+
+    def soft_update(self):
+        """
+        执行软更新
+        :return:None
+        """
+        # 软更新目标网络
+        for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
+            target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
+
+        for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
+            target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
+
+    def train_ddpg_on_policy(self):
+        """
+        执行on_policy 算法的训练
+        :return: None
+        """
 
         # 执行迭代，每一轮迭代结束以部署完成为标准
         for episode in range(ITERATION_NUM):
@@ -92,33 +163,13 @@ class Agent:
                 if self.environment_interaction.is_it_over():
                     next_action_probabilities = action_probabilities
                     next_state = state.copy()
-                else:   # 继续生成下一个动作
+                else:  # 继续生成下一个动作
                     next_action_probabilities = self.actor(next_state)
 
-                ## 计算critic误差
-                target_q_values = reward + GAMMA * self.critic_target(next_state, next_action_probabilities)
-                current_q_values = self.critic(state, action_probabilities)
-                critic_loss = nn.MSELoss()(current_q_values, target_q_values)
-
-                ## 训练critic网络
-                self.critic_optimizer.zero_grad()
-                critic_loss.backward(retain_graph=True)
-                self.critic_optimizer.step()
-
-                ## 计算actor误差
-                actor_loss = -self.critic(state, action_probabilities).mean()
-
-                ## 训练Actor网络
-                self.actor_optimizer.zero_grad()
-                actor_loss.backward(retain_graph=True)
-                self.actor_optimizer.step()
-
-                # 软更新目标网络
-                for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
-                    target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
-
-                for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
-                    target_param.data.copy_(TAU * param.data + (1 - TAU) * target_param.data)
+                # 执行训练模型的训练
+                self.train_model(state, action_probabilities, reward, next_state, next_action_probabilities)
+                # 执行软更新
+                self.soft_update()
 
                 episode_count += 1  # 记录次数
 
@@ -139,7 +190,80 @@ class Agent:
                     sum_fail_count += 1
                     self.environment_interaction.pass_round()  # 跳过当前部署
 
-            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            # self.environment_interaction.analysis_state(state)
+
+        print("训练完成")
+
+
+    def off_train(self):
+        """
+        执行离线训练
+        :return: None
+        """
+        # 当经验池中的样本数达到一个批次的量时才会能开始训练
+        if len(self.replay_buffer) < BATCH_SIZE:
+            return
+
+        # 执行若干次训练模型的更新后，在执行软更新
+        for state, action_probabilities, reward, next_state, next_action_probabilities in self.replay_buffer.sample():
+            # print(state, action_probabilities, reward, next_state, next_action_probabilities)
+            self.train_model(state, action_probabilities, reward, next_state, next_action_probabilities)
+        self.soft_update()
+
+    def train_ddpg_off_policy(self):
+        """
+        执行off_policy算法的训练
+        :return: None
+        """
+
+        # 执行迭代，每一轮迭代结束以部署完成为标准
+        for episode in range(ITERATION_NUM):
+            state = initial_state()  # 初始化状态
+            self.init_environment()  # 初始化环境（环境中已经自带了部署需求）
+            episode_count = 0  # 记录当前迭代的长度
+            fail_count = 0  # 记录失败次数
+            sum_fail_count = 0  # 记录未能部署上的节点数目
+
+            while True:
+                # 产生动作，和下一个状态
+                action_probabilities = self.actor(state)  # 由actor产生动作
+                action, reward, next_state = self.sampling(state)  # 采样
+
+                # 部署结束
+                if self.environment_interaction.is_it_over():
+                    next_action_probabilities = action_probabilities
+                    next_state = state.copy()
+                else:  # 继续生成下一个动作
+                    next_action_probabilities = self.actor(next_state)
+
+                # 添加样本
+                self.replay_buffer.add(state, action_probabilities, reward, next_state, next_action_probabilities)
+
+                ## 执行训练
+                self.off_train()
+
+                episode_count += 1  # 记录次数
+
+                # 部署结束退出循环
+                if self.environment_interaction.is_it_over():
+                    break
+
+
+                # 更新状态
+                state = next_state.copy()
+                # self.environment_interaction.analysis_state(state) # 检查状态
+
+                ## 防死循环机制
+                # 当出现一个服务在所有的服务器上都没法部署时，放弃部署该节点
+                # 处理方式是记录当前部署失败的次数，超过指定次数后，放弃部署该服务
+                fail_count = fail_count + 1 if reward == PUNISHMENT_DEPLOY_FAIL else 0
+                if fail_count > MAX_DEPLOY_COUNT:
+                    fail_count = 0
+                    sum_fail_count += 1
+                    self.environment_interaction.pass_round()  # 跳过当前部署
+
+            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
@@ -234,7 +358,8 @@ class Agent:
         :return:
         """
         # 训练
-        self.train_ddpg()
+        # self.train_ddpg_on_policy()
+        self.train_ddpg_off_policy()
         # res_state = self.get_deterministic_deployment()  # 最终结果
         self.save_model()
 

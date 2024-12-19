@@ -114,6 +114,7 @@ if __name__ == "__main__":
 
     # 输入数据示例
     example_input = initial_state()  # 创建一个输入数据
+
     print("输入状态数据如下")
     print(example_input)
 

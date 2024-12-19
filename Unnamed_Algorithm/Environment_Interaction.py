@@ -298,7 +298,7 @@ if __name__ == '__main__':
     #     _, next_state, r = env.get_next_state_and_reword(state, action_list)
     #     state = next_state
     #     print("部署奖励：", r)
-    # global all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data, connected_lines, graph
+    global all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data, connected_lines, graph
     for _ in range(3):
 
         all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data = environment_initialization()
