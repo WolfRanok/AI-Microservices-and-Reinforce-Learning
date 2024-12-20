@@ -7,7 +7,7 @@ from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
 
-ITERATION_NUM = 500  # 训练轮数
+ITERATION_NUM = 10000  # 训练轮数
 GAMMA = 0.95  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率
@@ -17,6 +17,7 @@ BATCH_SIZE = 64  # 一个批次中的数据量大小（用于off policy）
 CAPACITY = BATCH_SIZE * 100  # 经验回放池的大小
 torch.autograd.set_detect_anomaly(True)
 
+SAVE_COUNT = 200  # 每迭代几次就保存模型
 """
 经验回放：用于打破样本中的时间序列，但是如果神经网络中定义了lstm层，则需要谨慎使用
 """
@@ -193,7 +194,11 @@ class Agent:
                     sum_fail_count += 1
                     self.environment_interaction.pass_round()  # 跳过当前部署
 
-            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            # 指定一段时间保存一次模型
+            if episode % SAVE_COUNT == 0:
+                self.save_model()
+
+            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
@@ -263,7 +268,7 @@ class Agent:
                     sum_fail_count += 1
                     self.environment_interaction.pass_round()  # 跳过当前部署
 
-            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
@@ -319,7 +324,7 @@ class Agent:
 
             state = next_state  # 状态更新
             num += 1  # 记录迭代次数
-            self.environment_interaction.analysis_state(state)  # 查看状态
+            # self.environment_interaction.analysis_state(state)  # 查看状态
 
             ## 防死循环机制
             # 当出现一个服务在所有的服务器上都没法部署时，放弃部署该节点
@@ -330,8 +335,7 @@ class Agent:
                 self.environment_interaction.pass_round()  # 跳过当前部署
                 fail_ms_count += 1
 
-        print(
-            f"算法执行次数 {num} ,一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上", )
+        print(f"算法执行次数 {num} ,时延{500/reward},一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上", )
         self.environment_interaction.analysis_state(state)  # 测试专用
         return state  # 返回最终方案
 
@@ -369,12 +373,12 @@ class Agent:
         self.load_model()
 
         # 训练
-        self.train_ddpg_on_policy()
+        # self.train_ddpg_on_policy()
         # self.train_ddpg_off_policy()
-        # res_state = self.get_deterministic_deployment()  # 最终结果
+        res_state = self.get_deterministic_deployment()  # 最终结果
 
         # 保存模型
-        self.save_model()
+        # self.save_model()
 
 
 if __name__ == '__main__':
