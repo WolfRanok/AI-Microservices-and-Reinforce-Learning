@@ -378,7 +378,7 @@ class Agent:
         res_state = self.get_deterministic_deployment()  # 最终结果
 
         # 保存模型
-        # self.save_model()
+        self.save_model()
 
 
 if __name__ == '__main__':
