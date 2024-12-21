@@ -12,7 +12,7 @@ GAMMA = 0.95  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率
 TAU = 0.05  # 目标网络软更新系数，用于软更新
-MAX_DEPLOY_COUNT = 20  # 连续超过指定次数没有部署成功则认为当前节点无法部署
+MAX_DEPLOY_COUNT = 2 * MA_AIMS_NUM  # 连续超过指定次数没有部署成功则认为当前节点无法部署
 BATCH_SIZE = 64  # 一个批次中的数据量大小（用于off policy）
 CAPACITY = BATCH_SIZE * 100  # 经验回放池的大小
 torch.autograd.set_detect_anomaly(True)
@@ -161,7 +161,7 @@ class Agent:
             while True:
                 # 产生动作，和下一个状态
                 action_probabilities = self.actor(state)  # 由actor产生动作
-                action, reward, next_state = self.sampling(state)  # 采样
+                action, reward, next_state = self.sampling(state, episode_count)  # 采样
 
                 # 部署结束
                 if self.environment_interaction.is_it_over():
@@ -170,12 +170,15 @@ class Agent:
                 else:  # 继续生成下一个动作
                     next_action_probabilities = self.actor(next_state)
 
+                # 部署成功，执行训练
+                # if reward != PUNISHMENT_DEPLOY_FAIL:
+                # print("reward ==", reward)
                 # 执行训练模型的训练
                 self.train_model(state, action_probabilities, reward, next_state, next_action_probabilities)
                 # 执行软更新
                 self.soft_update()
 
-                episode_count += 1  # 记录次数
+                episode_count += 1  # 记录训练次数
 
                 # 部署结束退出循环
                 if self.environment_interaction.is_it_over():
@@ -198,7 +201,7 @@ class Agent:
             if episode % SAVE_COUNT == 0:
                 self.save_model()
 
-            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {self.environment_interaction.get_T(state)}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
@@ -268,15 +271,16 @@ class Agent:
                     sum_fail_count += 1
                     self.environment_interaction.pass_round()  # 跳过当前部署
 
-            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {500/reward}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {self.environment_interaction.get_T(state)}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
 
-    def sampling(self, state):
+    def sampling(self, state, episode_count=1):
         """
          采样函数，根据当前状态给出行动，奖励，下一个状态
         :param state: state
+        :param episode_count: 记录训练的轮数，用于判断是否为第一轮
         :return: (a_t, r_t, s_t+1, a_t+1)
         """
         action_probabilities = self.actor_target(state)  # 行动概率分布
@@ -289,11 +293,11 @@ class Agent:
 
         if self.environment_interaction.is_it_sufficient(index, state, action):  # 可以分配
             if self.environment_interaction.is_it_over():   # 部署结束
-                reward = self.environment_interaction.get_reward(0, state, next_state)
+                reward = self.environment_interaction.get_reward(0, state, next_state, episode_count)
             else:                       # 部署未结束
-                reward = self.environment_interaction.get_reward(1, state, next_state)
+                reward = self.environment_interaction.get_reward(1, state, next_state, episode_count)
         else:  # 不能分配
-            reward = self.environment_interaction.get_reward(-1)
+            reward = self.environment_interaction.get_reward(-1,episode_count=episode_count)
 
         return action, reward, next_state
 
@@ -373,12 +377,12 @@ class Agent:
         self.load_model()
 
         # 训练
-        # self.train_ddpg_on_policy()
+        self.train_ddpg_on_policy()
         # self.train_ddpg_off_policy()
         res_state = self.get_deterministic_deployment()  # 最终结果
 
         # 保存模型
-        self.save_model()
+        # self.save_model()
 
 
 if __name__ == '__main__':

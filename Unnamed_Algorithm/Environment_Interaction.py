@@ -6,8 +6,14 @@ from Unnamed_Algorithm.Network import *
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -10  # 部署失败的惩罚
 
+# 全局变量，历史最小时延
+T_min = 1e+10
 
 class Environment_Interaction:
+    # 奖励计算的参数
+    C1, C2, C3, C4 = 0.1, 1, 0.1, 0.001
+
+    
 
     def option_ms(self):
         """
@@ -166,20 +172,40 @@ class Environment_Interaction:
     #     # 分配成功，返回下一个状态，失败返回的状态和原来一样
     #     return 1, next_state, self.get_reward(1)
 
-    def get_reward(self, flag, state=None, next_state=None):
+    def get_T(self, state):
+        """
+        根据状态计算时延
+        :param state: state
+        :return: T
+        """
+        deploy = get_deploy(state)
+        rout = get_each_request_rout(deploy)
+        T = cal_total_delay(deploy, rout)
+        return T
+
+    def get_reward(self, flag, state=None, next_state=None, episode_count=1):
         """
         针对部署的情况给予一定的奖励，（该函数待修改！）
         :param flag: 一个整数标识符，用于表示当前部署情况，0表示部署完成，-1表示部署失败，1表示分配成功
         :param state: 状态，可以用于再部署完成的情况下计算时延
         :param next_state: 下一个状态，可以用于再部署完成的情况下计算时延
+        :param episode_count: 部署的轮数
         :return: 一个整数，用于表示rework
         """
-        if flag == 0:  # 部署完成，根据时延计算大奖励
-            deploy = get_deploy(state)
-            rout = get_each_request_rout(deploy)
-            return 500 / cal_total_delay(deploy, rout)
-        elif flag == 1:  # 分配成功，给与小奖励
-            return 1
+        if flag != -1:  # 部署成功
+            global T_min
+            T_next = self.get_T(next_state)
+            # print(T_min, T_next)
+            if episode_count == 0:  # 部署第一个节点
+                T = self.get_T(state)
+                r = self.C1 * (T - T_next)
+            elif T_next < T_min + 1/self.C3:   # 产生了更好的方案
+                r = self.C2 + self.C3*(T_min - T_next)
+            else:
+                r = self.C4 * (T_min - T_next)
+
+            T_min = min(T_min, T_next)    # 更新最小时延
+            return r
         else:  # 部署失败, 基于惩罚
             return PUNISHMENT_DEPLOY_FAIL
 
