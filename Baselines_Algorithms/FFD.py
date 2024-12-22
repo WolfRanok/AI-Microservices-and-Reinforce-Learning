@@ -186,7 +186,7 @@ if __name__ == '__main__':
     # 获取待分配实例数
     ms_image = get_ms_image()
     for i in range(len(ms_image)):
-        ms_image[i]+=ms_image[i]*random.choice([0, 1])
+        ms_image[i]+=(ms_image[i]+1)*random.choice([0, 1])
 
     # 初始化环境
     ffd = FFD_Algorithm(ms_image, all_ms)
