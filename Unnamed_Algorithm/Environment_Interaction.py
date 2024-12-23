@@ -6,14 +6,11 @@ from Unnamed_Algorithm.Network import *
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -10  # 部署失败的惩罚
 
-# 全局变量，历史最小时延
-T_min = 1e+10
-
 class Environment_Interaction:
     # 奖励计算的参数
     C1, C2, C3, C4 = 0.1, 1, 0.1, 0.001
-
-    
+    # 全局变量，历史最小时延
+    T_min = 1e+10
 
     def option_ms(self):
         """
@@ -193,18 +190,17 @@ class Environment_Interaction:
         :return: 一个整数，用于表示rework
         """
         if flag != -1:  # 部署成功
-            global T_min
             T_next = self.get_T(next_state)
             # print(T_min, T_next)
             if episode_count == 0:  # 部署第一个节点
                 T = self.get_T(state)
                 r = self.C1 * (T - T_next)
-            elif T_next < T_min + 1/self.C3:   # 产生了更好的方案
-                r = self.C2 + self.C3*(T_min - T_next)
+            elif T_next < self.T_min + 1/self.C3:   # 产生了更好的方案
+                r = self.C2 + self.C3*(self.T_min - T_next)
             else:
-                r = self.C4 * (T_min - T_next)
+                r = self.C4 * (self.T_min - T_next)
 
-            T_min = min(T_min, T_next)    # 更新最小时延
+            self.T_min = min(self.T_min, T_next)    # 更新最小时延
             return r
         else:  # 部署失败, 基于惩罚
             return PUNISHMENT_DEPLOY_FAIL
@@ -296,7 +292,7 @@ def environment_interaction_ms_initial():
 
 if __name__ == '__main__':
     # 制作一个待分配实例数
-    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, Data, graph, connected_lines = environment_initialization()
     # ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
     # ms_image = get_ms_image()
     #

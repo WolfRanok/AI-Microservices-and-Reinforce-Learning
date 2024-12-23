@@ -152,6 +152,10 @@ class Random_Algorithm:
         # 分析部署情况
         self.analysis_state(self.state)
 
+        deploy = get_deploy(self.state)
+        rout = get_each_request_rout(deploy)
+        print(cal_total_delay(deploy, rout))
+
 
     def __init__(self, ms_image, all_ms):
         """
@@ -167,7 +171,7 @@ class Random_Algorithm:
 
 if __name__ == '__main__':
     # 制作一个待分配实例数
-    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, data, graph, connected_lines = environment_initialization()
+    # all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker, bandwidth, Data, graph, connected_lines = environment_initialization()
     ms_image = get_ms_image()
 
     # 初始化环境

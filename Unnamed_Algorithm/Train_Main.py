@@ -1,6 +1,7 @@
 """
 该文件用于执行模型的训练
 """
+import json
 import os.path
 from collections import deque
 from Unnamed_Algorithm.Network import *
@@ -17,7 +18,7 @@ BATCH_SIZE = 64  # 一个批次中的数据量大小（用于off policy）
 CAPACITY = BATCH_SIZE * 100  # 经验回放池的大小
 torch.autograd.set_detect_anomaly(True)
 
-SAVE_COUNT = 200  # 每迭代几次就保存模型
+SAVE_COUNT = 100  # 每迭代几次就保存模型
 """
 经验回放：用于打破样本中的时间序列，但是如果神经网络中定义了lstm层，则需要谨慎使用
 """
@@ -64,6 +65,9 @@ class Agent:
     # 经验回放池
     replay_buffer = None
 
+    # 训练情况统计
+    statistics = []
+
     def __init__(self):
         # 模型初始化
         self.actor = Actor(ma_aims_num=MA_AIMS_NUM, node_num=NODE_NUM)
@@ -81,6 +85,12 @@ class Agent:
 
         # 经验回放的定义
         self.replay_buffer = ReplayBuffer(CAPACITY)
+
+        # 之前训练的记录
+        self.old_episode_count = 0
+
+        # 初始化环境
+        self.init_environment()
 
     def init_environment(self):
         """
@@ -101,7 +111,7 @@ class Agent:
 
         # print("critic_target 模型参数：")
         # for name, param in self.actor_target.named_parameters():
-        #     print(param.data)
+        #     print(param.Data)
         # print(param.grad)
 
     def train_model(self, state, action_probabilities, reward, next_state, next_action_probabilities):
@@ -132,6 +142,9 @@ class Agent:
         actor_loss.backward(retain_graph=True)
         self.actor_optimizer.step()
 
+        ## 记录误差总和
+        self.data['loss'] += actor_loss.item()
+
     def soft_update(self):
         """
         执行软更新
@@ -151,12 +164,18 @@ class Agent:
         """
 
         # 执行迭代，每一轮迭代结束以部署完成为标准
-        for episode in range(ITERATION_NUM):
+        for episode in range(1, ITERATION_NUM + 1):
             state = initial_state()  # 初始化状态
-            self.init_environment()  # 初始化环境（环境中已经自带了部署需求）
+            self.environment_interaction.refresh()  # 更新镜像需求数
             episode_count = 0  # 记录当前迭代的长度
             fail_count = 0  # 记录失败次数
             sum_fail_count = 0  # 记录未能部署上的节点数目
+            self.data = {    # 数据字典
+                'episode': episode + self.old_episode_count,
+                'sum_reward': 0,
+                'loss': 0,
+                'T': 0,
+            }
 
             while True:
                 # 产生动作，和下一个状态
@@ -173,19 +192,21 @@ class Agent:
                 # 部署成功，执行训练
                 # if reward != PUNISHMENT_DEPLOY_FAIL:
                 # print("reward ==", reward)
+                ## 训练
                 # 执行训练模型的训练
                 self.train_model(state, action_probabilities, reward, next_state, next_action_probabilities)
                 # 执行软更新
                 self.soft_update()
 
+                ## 数据更新
                 episode_count += 1  # 记录训练次数
 
+                if reward != PUNISHMENT_DEPLOY_FAIL: self.data['sum_reward'] += reward
                 # 部署结束退出循环
                 if self.environment_interaction.is_it_over():
                     break
 
-                # 更新状态
-                state = next_state.copy()
+                state = next_state.copy() # 更新状态
                 # self.environment_interaction.analysis_state(state) # 检查状态
 
                 ## 防死循环机制
@@ -197,11 +218,14 @@ class Agent:
                     sum_fail_count += 1
                     self.environment_interaction.pass_round()  # 跳过当前部署
 
+            self.data['T'] = self.environment_interaction.get_T(state)
+            self.statistics.append(self.data)   # 记录训练数据
+            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {self.data['T']}，函数损失值loss为 {self.data['loss']} ，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            print(self.data)
+
             # 指定一段时间保存一次模型
             if episode % SAVE_COUNT == 0:
                 self.save_model()
-
-            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {self.environment_interaction.get_T(state)}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
@@ -271,7 +295,7 @@ class Agent:
                     sum_fail_count += 1
                     self.environment_interaction.pass_round()  # 跳过当前部署
 
-            print(f"第 {episode+1} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {self.environment_interaction.get_T(state)}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
+            print(f"第 {episode} 次迭代执行了 {episode_count} 次训练, 当前部署得到的延迟为 {self.environment_interaction.get_T(state)}，延迟奖励为：{reward}，一共有 {self.environment_interaction.sum_ms_aims} 个待部署实例，其中有 {sum_fail_count} 个实例没有部署上")
             # self.environment_interaction.analysis_state(state)
 
         print("训练完成")
@@ -339,7 +363,7 @@ class Agent:
                 self.environment_interaction.pass_round()  # 跳过当前部署
                 fail_ms_count += 1
 
-        print(f"算法执行次数 {num} ,时延{500/reward},一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上", )
+        print(f"算法执行次数 {num} ,时延{self.environment_interaction.get_T(state)},一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上", )
         self.environment_interaction.analysis_state(state)  # 测试专用
         return state  # 返回最终方案
 
@@ -348,8 +372,14 @@ class Agent:
         用于保存模型，由于不同模型接受的参数规模不一样（这是由于服务器数量，微服务类型数量等因素导致的），所以这里按照输入的类型进行命名
         :return:None
         """
+        # 保存模型
         torch.save(self.actor_target.state_dict(), f"Model/actor_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth")
         torch.save(self.critic_target.state_dict(), f"Model/critic_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth")
+
+        # 保存数据
+        with open('Data/statistics.json', 'w', encoding='utf-8') as f:
+            json.dump(self.statistics, f, ensure_ascii=False, indent=4)
+
         print("模型已保存！")
 
     def load_model(self):
@@ -357,6 +387,13 @@ class Agent:
         当模型存在时，用于加载模型
         :return: None
         """
+        if os.path.exists('Data/statistics.json'):
+            with open('Data/statistics.json', 'r', encoding='utf-8') as f:
+                self.statistics = json.load(f)
+                self.old_episode_count = len(self.statistics)
+                for data in self.statistics:
+                     self.environment_interaction.T_min = min(self.environment_interaction.T_min, data['T'])
+
         actor_url = f"Model/actor_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth"
         critic_url = f"Model/critic_target_model_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.pth"
 
@@ -375,11 +412,10 @@ class Agent:
         """
         # 读取模型
         self.load_model()
-
         # 训练
         self.train_ddpg_on_policy()
         # self.train_ddpg_off_policy()
-        res_state = self.get_deterministic_deployment()  # 最终结果
+        # res_state = self.get_deterministic_deployment()  # 最终结果
 
         # 保存模型
         # self.save_model()
@@ -389,6 +425,5 @@ if __name__ == '__main__':
     agent = Agent()
     # print(agent.actor_target(state))
     agent.run()
-
     # print(agent.actor_target(state))
 

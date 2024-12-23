@@ -23,10 +23,8 @@ def initial_state():
     CPU = np.zeros(shape=(2, NODE_NUM))
     GPU = np.zeros(shape=(2, NODE_NUM))
     Memory = np.zeros(shape=(2, NODE_NUM))
-    node_list = []
     for i in range(NODE_NUM):
-        edge_node = EDGE_NODE(i)
-        node_list.append(edge_node)
+        edge_node = node_list[i]
         CPU[1][i] = edge_node.cpu  # 初始化剩余cpu资源
         GPU[1][i] = edge_node.gpu  # 初始化剩余gpu资源
         Memory[1][i] = edge_node.memory  # 初始化剩余memory资源
@@ -438,7 +436,7 @@ if __name__ == '__main__':
     # random.seed(1326)
     # np.random.seed(25)
     # all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, \
-    #     bandwidth, data = environment_initialization()
+    #     bandwidth, Data = environment_initialization()
     # connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)
     show_graph()
     state = initial_state()
