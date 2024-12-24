@@ -23,7 +23,6 @@ def initial_state():
     CPU = np.zeros(shape=(2, NODE_NUM))
     GPU = np.zeros(shape=(2, NODE_NUM))
     Memory = np.zeros(shape=(2, NODE_NUM))
-    node_list = []
     for i in range(NODE_NUM):
         edge_node = node_list[i]
         CPU[1][i] = edge_node.cpu  # 初始化剩余cpu资源
