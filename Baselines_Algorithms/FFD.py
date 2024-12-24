@@ -170,6 +170,12 @@ class FFD_Algorithm:
         # 分析部署情况,查看一下最终状态
         self.analysis_state(self.state)  
 
+        # 生成路由，计算时延
+        self.deploy = get_deploy(self.state)
+        rout = get_each_request_rout(self.deploy)
+        delay = cal_total_delay(self.deploy,rout)
+        print(delay)
+
 
     def __init__(self, ms_image, all_ms):
         """
@@ -191,7 +197,7 @@ if __name__ == '__main__':
     # 初始化环境
     ffd = FFD_Algorithm(ms_image, all_ms)
 
-    # 初试状态
+    # 随机给出一个初试状态
     state = initial_state()
 
     ffd.run_ffd_algorithm(state)
