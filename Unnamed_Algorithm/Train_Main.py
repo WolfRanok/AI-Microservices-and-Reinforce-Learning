@@ -8,11 +8,11 @@ from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
 
-ITERATION_NUM = 20000  # 训练轮数
+ITERATION_NUM = 10000  # 训练轮数
 GAMMA = 0.95  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率
-TAU = 0.05  # 目标网络软更新系数，用于软更新
+TAU = 0.1  # 目标网络软更新系数，用于软更新
 MAX_DEPLOY_COUNT = 2 * MA_AIMS_NUM  # 连续超过指定次数没有部署成功则认为当前节点无法部署
 BATCH_SIZE = 64  # 一个批次中的数据量大小（用于off policy）
 CAPACITY = BATCH_SIZE * 100  # 经验回放池的大小
@@ -142,8 +142,9 @@ class Agent:
         actor_loss.backward(retain_graph=True)
         self.actor_optimizer.step()
 
-        ## 记录误差总和
-        self.data['loss'] += actor_loss.item()
+        ## 记录误差总和，与参数改变量总和
+        self.data['loss'] += critic_loss.item()
+        self.data['param_change'] += sum((abs(param.grad.norm().item()) for param in self.actor.parameters()))
 
     def soft_update(self):
         """
@@ -174,6 +175,7 @@ class Agent:
                 'episode': episode + self.old_episode_count,
                 'sum_reward': 0,
                 'loss': 0,
+                'param_change': 0,
                 'T': 0,
             }
 
@@ -191,8 +193,8 @@ class Agent:
 
                 # 部署成功，执行训练
                 # if reward != PUNISHMENT_DEPLOY_FAIL:
-                # print("reward ==", reward)
-                ## 训练
+                    # print("reward ==", reward)
+                    ## 训练
                 # 执行训练模型的训练
                 self.train_model(state, action_probabilities, reward, next_state, next_action_probabilities)
                 # 执行软更新
@@ -308,7 +310,6 @@ class Agent:
         :return: (a_t, r_t, s_t+1, a_t+1)
         """
         action_probabilities = self.actor_target(state)  # 行动概率分布
-
         self.environment_interaction.index = index = self.environment_interaction.option_ms()  # 选择需要部署的类型
 
         action = self.environment_interaction.get_action(index, action_probabilities)  # 行动
@@ -413,9 +414,9 @@ class Agent:
         # 读取模型
         self.load_model()
         # 训练
-        self.train_ddpg_on_policy()
-        # self.train_ddpg_off_policy()
-        # res_state = self.get_deterministic_deployment()  # 最终结果
+        # self.train_ddpg_on_policy()     # 在线学习
+        # self.train_ddpg_off_policy()  # 离线学习
+        res_state = self.get_deterministic_deployment()  # 最终结果
 
         # 保存模型
         # self.save_model()
