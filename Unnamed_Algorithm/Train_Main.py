@@ -8,7 +8,7 @@ from Unnamed_Algorithm.Network import *
 from Unnamed_Algorithm.Environment_Interaction import *
 import torch.optim as optim
 
-ITERATION_NUM = 10000  # 训练轮数
+ITERATION_NUM = 20000  # 训练轮数
 GAMMA = 0.95  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-3  # critic网络的学习率

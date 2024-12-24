@@ -380,8 +380,7 @@ def cal_total_delay(deploy, all_user_rout):
             p = value/lamda
             # print(f"user:{user.id},node:{node.id},p:{p}")
             rec_delay = cal_dis_user_node(user, node) / v
-            if prop_delay != 0:
-                total_reception_delay_each_user[user.id] += rec_delay * p
+            total_reception_delay_each_user[user.id] += rec_delay * p
     # print(f"服务请求接入时延：{total_access_delay_each_user}，总和为：{total_access_delay_each_user.sum()}")
     # print(f"服务请求处理时延：{total_ms_proc_delay_each_user}，总和为：{total_ms_proc_delay_each_user.sum()}")
     # print(f"服务请求通信时延：{total_communication_delay_each_user}，总和为：{total_communication_delay_each_user.sum()}")
@@ -423,7 +422,7 @@ def show_graph():
         user_x_list.append(x)
         user_y_list.append(y)
     # 节点连接
-    print(connected_lines)
+    # print(connected_lines)
     for (node1, node2) in connected_lines:
         node1, node2 = node_list[node1], node_list[node2]
         plt.plot([node1.x, node2.x], [node1.y, node2.y], c='red', linestyle='-', linewidth=0.5)
@@ -436,7 +435,7 @@ if __name__ == '__main__':
     # random.seed(1326)
     # np.random.seed(25)
     # all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, \
-    #     bandwidth, Data = environment_initialization()
+    #     bandwidth, data = environment_initialization()
     # connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)
     show_graph()
     state = initial_state()
