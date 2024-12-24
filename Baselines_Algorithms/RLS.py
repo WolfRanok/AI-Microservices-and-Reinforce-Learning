@@ -2,8 +2,8 @@
 随即局部搜索算法，每次对需求最大的微服务进行随机部署
 部署时，遍历边缘节点，选择资源满足要求的节点，直到部署成功
 """
-from ENV import *
-from ENV_DEF import *
+from Environment.ENV import *
+from Environment.ENV_DEF import *
 MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class RLS_Algorithm:
@@ -108,11 +108,12 @@ class RLS_Algorithm:
         """
         self.state = state.copy()
         self.analysis_state(self.state, flag=True)  # 查看一下初试状态
-        flag=-1
+        
         
         while True:  # 开始部署
             # 选择待分配的节点
             index = self.option_ms()
+            flag=-1
 
             # 部署完成退出循环
             if index == -1:
@@ -125,7 +126,7 @@ class RLS_Algorithm:
                     flag=i
                     break
             if flag == -1:
-                self.ms_image[index] == 0
+                self.ms_image[index] = 0
 
         # 分析部署情况,查看一下最终状态
         self.analysis_state(self.state)  
