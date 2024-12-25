@@ -286,7 +286,7 @@ def cal_ms_delay(deploy, lamda, ms, node):
         num = int(deploy[ms.id+AIMS_NUM][node.id])
     rh0 = lamda / alpha
     rh1 = lamda / (num * alpha)
-    if rh1 > 0 and rh1 < 1:
+    if rh1 > 0 and rh1 < 0.999:
         v1 = 0
         for n in range(num):
             v2 = jiechen(n)
