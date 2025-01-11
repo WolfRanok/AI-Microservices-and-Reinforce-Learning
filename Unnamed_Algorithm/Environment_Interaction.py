@@ -1,7 +1,9 @@
 """
 该脚本用于实现微服务的环境交互工作
 """
-from Unnamed_Algorithm.Network import *
+import numpy as np
+
+from DAC.Network import *
 
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
@@ -19,9 +21,16 @@ class Environment_Interaction:
         返回-1表示已经全部部署完毕
         :return:MaxIndex
         """
-        index = np.argmax(self.ms_image)
-        if self.ms_image[index] <= 0:
-            return -1
+        # index = np.argmax(self.ms_image)
+        dep_is_over = True
+        index = -1
+        for idx in range(len(self.ms_image)):
+            if self.ms_image[idx]!=0:
+                index = idx%(MA_AIMS_NUM)
+                dep_is_over=False
+                break
+        if dep_is_over:
+            return -1,
         return index
 
     def is_it_sufficient(self, index, state, action):
@@ -49,8 +58,6 @@ class Environment_Interaction:
 
         return now_cpu >= cpu and now_memory >= memory and now_gpu >= gpu
 
-
-
     def allocate_resources(self, index, state, action):
         """
         给某一个服务分配资源，若不够用则返回-1
@@ -59,19 +66,7 @@ class Environment_Interaction:
         :param action: 行动，即选择部署的节点
         :return: bool 表示是否分配成功
         """
-        if not self.is_it_sufficient(index, state, action):
-            # # 分离得到资源情况
-            # resource = get_resource(state)
-            #
-            # # 需要消耗的资源情况
-            # cpu = self.ms_aims[index].get_cpu()
-            # gpu = self.ms_aims[index].get_gpu()
-            # memory = self.ms_aims[index].get_memory()
-            #
-            # now_cpu = resource[NODE_NUM: NODE_NUM * 2][action]
-            # now_gpu = resource[NODE_NUM * 3: NODE_NUM * 4][action]
-            # now_memory = resource[NODE_NUM * 5:][action]
-            # print(f'资源不够不能分配！当前CPU：{now_cpu}、GPU：{now_gpu}、内存：{now_memory}，需要的资源：CPU：{cpu}、GPU：{gpu}、内存：{memory}')
+        if not self.is_it_sufficient(index, state, action) or sum(self.ms_image)==0:
             return False
 
         # 分离得到部署情况和资源情况
@@ -86,8 +81,15 @@ class Environment_Interaction:
         # 可以分配资源，开始分配
         ## 分配实例数
         # print(state)
-        self.ms_image[index] -= 1
+        this_ms_index = index
+        for i in range(USER_NUM):
+            if self.ms_image[index+i*MA_AIMS_NUM]!=0:
+                this_ms_index = index+i*MA_AIMS_NUM
+                break
+        self.ms_image[this_ms_index] -= 1
+        # print(self.ms_image)
         deploy[index][action] += 1
+        self.dep_ms_count += 1 # 已部署的实例数+1，指针后移
         ## 配平相应的资源
         # cpu分配
         resource[NODE_NUM: NODE_NUM * 2][action] -= cpu
@@ -106,7 +108,8 @@ class Environment_Interaction:
         用于判断部署是否已经结束
         :return: None
         """
-        return self.option_ms() == -1
+        return sum(self.ms_image)==0
+
 
     def get_action(self, index, action_probabilities):
         """
@@ -131,43 +134,10 @@ class Environment_Interaction:
 
         # 对next_state 进行分配，注意这里的next_state 传入的是引用变量对象
         self.allocate_resources(index, next_state, action)
-
+        forward = get_rout(next_state)
+        rout = get_each_request_rout(get_deploy(next_state))
+        rout_to_forward(rout,forward)
         return next_state
-
-    # def get_next_state_and_reword(self, state, action_probabilities):
-    #     """
-    #     根据当前状态和行动列表执行下一步行动得到新的状态
-    #     标识符：部署成功返回1，部署失败返回 -1，部署结束返回 0
-    #     :param state:
-    #     :param action_probabilities:
-    #     :return:部署状态标识符，状态，奖励
-    #     """
-    #     # 初始化
-    #     next_state = state.copy()
-    #
-    #     ## 找到要部署的服务
-    #     self.index = self.option_ms()
-    #     if self.index == -1:
-    #         # print("已部署完成")
-    #         return 0, next_state, self.get_reward(0, state)
-    #
-    #     # print("待分配实例数情况：", self.ms_image)
-    #     # print(f"选择第{self.index}个服务进行部署")
-    #
-    #     # 找到行动，即按指定概率随机选择一个服务节点
-    #     action = torch.multinomial(action_probabilities[self.index], num_samples=1).item()
-    #     # print(f"微服务{self.index},的需求为CPU:{self.ms_aims[self.index].get_cpu()},GPU:{self.ms_aims[self.index].get_gpu()},内存:{self.ms_aims[self.index].get_memory()}")
-    #     # print("当前的actor产生的行动（每个微服务选择每一个服务器节点部署的概率分布）如下：\n", action_probabilities)
-    #     # print(f"根据概率{action_probabilities[self.index]}选择了行动{action}，作为部署节点")
-    #     ## 资源分配
-    #
-    #     # 分配失败
-    #     if not self.allocate_resources(self.index, next_state, action):
-    #         # print("分配失败")
-    #         return -1, next_state, self.get_reward(-1)
-    #
-    #     # 分配成功，返回下一个状态，失败返回的状态和原来一样
-    #     return 1, next_state, self.get_reward(1)
 
     def get_T(self, state):
         """
@@ -189,28 +159,60 @@ class Environment_Interaction:
         :param episode_count: 部署的轮数
         :return: 一个整数，用于表示rework
         """
+        T_next = self.get_T(next_state)
+        T = self.get_T(state)
         if flag != -1:  # 部署成功
-            T_next = self.get_T(next_state)
-            # print(T_min, T_next)
+            idx = self.dep_ms_count%self.T_min_list.size
+            # print(self.T_min_list[idx], T_next)
             if episode_count == 0:  # 部署第一个节点
-                T = self.get_T(state)
-                r = self.C1 * (T - T_next)
-            elif T_next < self.T_min + 1/self.C3:   # 产生了更好的方案
-                r = self.C2 + self.C3*(self.T_min - T_next)
+                r = self.C1 * (self.T_min_list[idx] - T_next)
+            elif T_next <= self.T_min_list[idx]:   # 产生了更好的方案
+                r = self.C3*(self.T_min_list[idx] - T_next)+0.1
             else:
-                r = self.C4 * (self.T_min - T_next)
-
-            self.T_min = min(self.T_min, T_next)    # 更新最小时延
+                r = self.C4 * (self.T_min_list[idx] - T_next)
+            self.T_min_list[idx] = min(self.T_min_list[idx], T_next)
+            if self.T_min_list[idx]== T_next:
+                self.adv[idx] = 1
+            else:
+                self.adv[idx] = 0
+            self.T_list[idx] = T_next
+            self.T_min = self.T_min_list[idx]    # 更新最小时延
             return r
-        else:  # 部署失败, 基于惩罚
-            return PUNISHMENT_DEPLOY_FAIL
 
-    def pass_round(self):
+        else:  # 部署失败, 基于惩罚
+            idx = self.dep_ms_count%self.T_min_list.size
+            self.T_list[idx] = T_next
+            return PUNISHMENT_DEPLOY_FAIL
+        # T_next = self.get_T(next_state)
+        # T = self.get_T(state)
+        # idx = self.dep_ms_count % self.T_min_list.size
+        # self.T_list[idx] = T_next
+        # if flag!=-1:
+        #     # if T_next<=T and T_next <= self.T_min_list[idx]+1:
+        #     #     r = (T- T_next)*0.2+(self.T_min_list[idx]-T_next)*0.5+1.5
+        #     #     self.T_min_list[idx] = T_next
+        #     # elif T_next<T:
+        #     #     r = (T- T_next)*0.2+0.5
+        #     # else:
+        #     #     r = (T-T_next)*0.1-0.5
+        #     r = (T-T_next)*0.5-1
+        #     return r
+        # else:
+        #     return PUNISHMENT_DEPLOY_FAIL
+
+
+    def pass_round(self, this_index):
         """
         当节点无法部署时使用，跳过当前一轮服务部署
         :return: None
         """
-        self.ms_image[self.index] -= 1
+        this_ms_index = this_index
+        for i in range(USER_NUM):
+            if self.ms_image[this_index + i * MA_AIMS_NUM] != 0:
+                this_ms_index = this_index + i * MA_AIMS_NUM
+                break
+        self.ms_image[this_ms_index] -= 1
+        self.dep_ms_count += 1
 
     def refresh(self):
         """
@@ -270,7 +272,10 @@ class Environment_Interaction:
         self.sum_ms_aims = int(sum(self.old_ms_image))   # 待部署的服务总数
         # 初始化服务
         self.ms_aims = all_ms
-
+        self.adv = np.full((sum(ms_image).astype(int),), 0)
+        self.T_list = np.full((sum(ms_image).astype(int),), 0.0)
+        self.T_min_list = np.full((sum(ms_image).astype(int),), cal_total_delay(get_deploy(initial_state()),get_each_request_rout(get_deploy(initial_state()))))
+        self.dep_ms_count = -1
         # 计数器
         self.count = 0
 
@@ -284,9 +289,11 @@ def environment_interaction_ms_initial():
     global all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data, connected_lines, graph
     all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data = environment_initialization()
     # ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
-    ms_image = get_ms_image()
+    ms_image = get_each_req_ms_image()
+    ms_image = np.reshape(ms_image,(USER_NUM*MA_AIMS_NUM))
     # 初始化环境
     env = Environment_Interaction(ms_image, all_ms)
+
     return env
 
 
@@ -329,3 +336,5 @@ if __name__ == '__main__':
         print(ms_image)
         state = initial_state()
         # print(state)
+    e = environment_interaction_ms_initial()
+    print(e.T_min_list.size)
