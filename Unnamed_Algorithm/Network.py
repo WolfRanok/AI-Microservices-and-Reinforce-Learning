@@ -3,17 +3,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 
-from Environment.ENV import *
+from Environment.NEW_ENV import *
 MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class Actor(nn.Module):
-    def __init__(self, ma_aims_num, node_num):
+    def __init__(self, ma_aims_num, node_num, user_num):
         super(Actor, self).__init__()
         self.ma_aims_num = ma_aims_num
         self.node_num = node_num
 
         # 输入维度规模
-        input_size = ma_aims_num * node_num + 3 * 2 * node_num
+        input_size = ma_aims_num * node_num \
+                     + 3 * 2 * node_num \
+                     + user_num*(node_num*node_num+node_num)\
+                     + user_num*(4+ma_aims_num) \
+                     + node_num*3
+
         # 输出维度
         output_size = ma_aims_num * node_num
 
@@ -56,13 +61,18 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, ma_aims_num, node_num):
+    def __init__(self, ma_aims_num, node_num, user_num):
         super(Critic, self).__init__()
         self.ma_aims_num = ma_aims_num
         self.node_num = node_num
 
         # 输入维度
-        input_size = ma_aims_num * node_num + 3 * 2 * node_num + ma_aims_num * node_num
+        input_size = ma_aims_num*node_num \
+                     + 3*2*node_num \
+                     + user_num*(node_num*node_num+node_num) \
+                     + user_num * (4 + ma_aims_num) \
+                     + node_num * 3 \
+                     + ma_aims_num*node_num
 
         # LSTM层
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=128, num_layers=1, batch_first=True)
@@ -119,8 +129,8 @@ if __name__ == "__main__":
     print(example_input)
 
     # 初始化 Actor 和 Critic 网络
-    actor = Actor(MA_AIMS_NUM, NODE_NUM)
-    critic = Critic(MA_AIMS_NUM, NODE_NUM)
+    actor = Actor(MA_AIMS_NUM, NODE_NUM, USER_NUM)
+    critic = Critic(MA_AIMS_NUM, NODE_NUM, USER_NUM)
 
     # 前向传播
     action_probabilities = actor(example_input)
