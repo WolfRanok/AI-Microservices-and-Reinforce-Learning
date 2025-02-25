@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-MS_NUM = 4
+MS_NUM = 15
 AIMS_NUM = 3
 NODE_NUM = 10
 USER_NUM = 3

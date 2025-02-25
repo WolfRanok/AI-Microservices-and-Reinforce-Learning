@@ -4,11 +4,13 @@
 import json
 import os.path
 from collections import deque
-from DAC.Network import *
-# from DAC.Environment_Interaction import *
-from DAC.CY_Environment_Interaction import *
+from Network import *
+from Environment_Interaction import *
+# from CY_Environment_Interaction import *
+from Environment.ENV import *
 import torch.optim as optim
 import csv
+import random
 
 ITERATION_NUM = 2000  # 训练轮数
 GAMMA = 0.99  # 衰减率[0-1]
@@ -377,16 +379,17 @@ class Agent:
         self.save_model()
 
     def inference(self):
+
         # 读取模型
         self.load_model()
         res_state = self.get_deterministic_deployment()  # 最终结果
-        return  res_state
+        return res_state
 
 if __name__ == '__main__':
     agent = Agent()
     # print(agent.actor_target(state))
-    agent.train()
-    # f_state = agent.inference()
+    # agent.train()
+    f_state = agent.inference()
     # f_deploy = get_deploy(f_state)
     # f_rout = get_each_request_rout(f_deploy)
     # print(f_deploy)
