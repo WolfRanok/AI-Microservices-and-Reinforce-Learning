@@ -6,8 +6,9 @@ import torch
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
 
-from Environment.ENV import *
-from Environment.ENV_DEF import *
+from AIMICROSERVICE.Environment.NEW_ENV import *
+from AIMICROSERVICE.Environment.ENV_DEF import *
+
 MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class RLS_Algorithm:
@@ -139,7 +140,8 @@ class RLS_Algorithm:
         self.deploy = get_deploy(self.state)
         rout = get_each_request_rout(self.deploy)
         delay = cal_total_delay(self.deploy,rout)
-        print(delay)
+        print("T_RLS:",delay)
+        return delay
 
 
     def __init__(self, ms_image, all_ms):

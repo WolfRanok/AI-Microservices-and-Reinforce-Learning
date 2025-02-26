@@ -1,16 +1,12 @@
 """
-随即局部搜索算法，每次对需求最大的微服务进行随机部署
-部署时，遍历边缘节点，选择资源满足要求的节点，直到部署成功
+首次适应递减算法，每次对需求最大的微服务进行随机部署
+部署时，将节点按未利用资源率从高到低排序，这样在分配任务时优先考虑未利用率高的节点，直到部署成功
 """
-import torch
-torch.manual_seed(0)  # 随机数种子
-PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
-
-from Environment.ENV import *
-from Environment.ENV_DEF import *
+from AIMICROSERVICE.Environment.NEW_ENV import *
+from AIMICROSERVICE.Environment.ENV_DEF import *
 MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
-class RLS_Algorithm:
+class FFD_Algorithm:
     def option_ms(self):
         """
         选择一个微服务进行分配
@@ -93,31 +89,34 @@ class RLS_Algorithm:
         # cpu分配
         resource[NODE_NUM: NODE_NUM * 2][node] -= cpu
         resource[:NODE_NUM][node] += cpu
+        self.resource_list[node][0]=resource[NODE_NUM: NODE_NUM * 2][node]/(resource[NODE_NUM: NODE_NUM * 2][node]+resource[:NODE_NUM][node])
         # gpu分配
         resource[NODE_NUM * 3: NODE_NUM * 4][node] -= gpu
         resource[NODE_NUM * 2: NODE_NUM * 3][node] += gpu
+        self.resource_list[node][1]=resource[NODE_NUM * 3: NODE_NUM * 4][node]/(resource[NODE_NUM * 2: NODE_NUM * 3][node]+resource[NODE_NUM * 3: NODE_NUM * 4][node])
         # 内存分配
         resource[NODE_NUM * 5:][node] -= memory
         resource[NODE_NUM * 4: NODE_NUM * 5][node] += memory
+        self.resource_list[node][2]=resource[NODE_NUM * 5:][node]/(resource[NODE_NUM * 4: NODE_NUM * 5][node]+resource[NODE_NUM * 5:][node])
         # 查看状态
         self.count+=1
         self.analysis_state(state)
         return True
 
-    def run_rls_algorithm(self, state):
+    def run_ffd_algorithm(self, state):
         """
-        执行rls算法,获取部署状态
+        执行随机算法，获取部署状态
         :param state: 初试状态
         :return: state
         """
         self.state = state.copy()
         self.analysis_state(self.state, flag=True)  # 查看一下初试状态
-        
+        count = 0  # 计数器
+        self.resource_list=[[1]*3 for _ in range(NODE_NUM)]  # 初始化每个节点起始的资源未利用率
         
         while True:  # 开始部署
             # 选择待分配的节点
             index = self.option_ms()
-            flag=-1
 
             # 部署完成退出循环
             if index == -1:
@@ -125,12 +124,48 @@ class RLS_Algorithm:
                 break
 
             # 对于指定的微服务选择一个节点进行部署，直到部署成功
-            for i in range(NODE_NUM):
-                if self.allocate_resources(index, self.state, i):
-                    flag=i
+            node_list = list(range(NODE_NUM))  
+            node=-1
+            if(index<=MS_NUM-1):
+                score=0
+                for i in range(NODE_NUM):
+                    this_score=self.resource_list[i][0]+self.resource_list[i][2]
+                    score=max(score,this_score)
+                    if this_score>=score:node=i
+            else:
+                score=0
+                for i in range(NODE_NUM):
+                    this_score=self.resource_list[i][0]+self.resource_list[i][1]+self.resource_list[i][2]
+                    score=max(score,this_score)
+                    if this_score>=score:node=i
+
+
+            # 针对某一个服务的部署
+            while not self.allocate_resources(index, self.state, node):
+                # 分配失败则重新删除节点
+                node_list.remove(node)
+
+                # 说明没有可以用的服务节点，当前节点无法完成分配
+                if not node_list:
+                    # print("该服务节点无法分配，其所需资源没有服务器符合要求")
+                    self.ms_image[index] -= 1
                     break
-            if flag == -1:
-                self.ms_image[index] = 0
+
+                # 重新选择一个节点进行部署
+                node = random.choice(node_list)
+                if(index<=MS_NUM-1):
+                    score=0
+                    for i in node_list:
+                        this_score=self.resource_list[i][0]+self.resource_list[i][2]
+                        score=max(score,this_score)
+                        if this_score>=score:node=i
+                else:
+                    score=0
+                    for i in node_list:
+                        this_score=self.resource_list[i][0]+self.resource_list[i][1]+self.resource_list[i][2]
+                        score=max(score,this_score)
+                        if this_score>=score:node=i
+                
 
         # 分析部署情况,查看一下最终状态
         self.analysis_state(self.state)  
@@ -139,7 +174,8 @@ class RLS_Algorithm:
         self.deploy = get_deploy(self.state)
         rout = get_each_request_rout(self.deploy)
         delay = cal_total_delay(self.deploy,rout)
-        print(delay)
+        print("T_FFD:", delay)
+        return delay
 
 
     def __init__(self, ms_image, all_ms):
@@ -160,9 +196,9 @@ if __name__ == '__main__':
         ms_image[i]+=(ms_image[i]+1)*random.choice([0, 1])
 
     # 初始化环境
-    rls = RLS_Algorithm(ms_image, all_ms)
+    ffd = FFD_Algorithm(ms_image, all_ms)
 
     # 随机给出一个初试状态
     state = initial_state()
 
-    rls.run_rls_algorithm(state)
+    ffd.run_ffd_algorithm(state)
