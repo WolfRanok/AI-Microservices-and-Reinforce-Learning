@@ -117,7 +117,8 @@ def get_resource(state):
     :param state: state
     :return:
     """
-    resource = state[MA_AIMS_NUM * NODE_NUM:MA_AIMS_NUM * NODE_NUM+RESOURCE*2*NODE_NUM]
+    resource = state[MA_AIMS_NUM * NODE_NUM:MA_AIMS_NUM * NODE_NUM + RESOURCE*2*NODE_NUM]
+    # resource = state[MA_AIMS_NUM * NODE_NUM:]
     return resource
 def get_rout(state):
     start = (MA_AIMS_NUM+RESOURCE*2)*NODE_NUM

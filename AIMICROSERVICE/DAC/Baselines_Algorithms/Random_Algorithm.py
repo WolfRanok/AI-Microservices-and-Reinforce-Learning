@@ -4,7 +4,6 @@
 """
 from AIMICROSERVICE.Environment.NEW_ENV import *
 from AIMICROSERVICE.Environment.ENV_DEF import *
-MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class Random_Algorithm:
     def option_ms(self):
@@ -115,7 +114,7 @@ class Random_Algorithm:
         :return: state
         """
         self.state = state.copy()
-        self.analysis_state(self.state, flag=True)  # 查看一下初试状态
+        # self.analysis_state(self.state, flag=True)  # 查看一下初试状态
         self.refresh()  # 状态刷新
 
         count = 0  # 计数器
@@ -126,7 +125,7 @@ class Random_Algorithm:
 
             # 部署完成退出循环
             if index == -1:
-                print("部署完成")
+                # print("部署完成")
                 break
 
             # 对于指定的微服务随机选择一个节点进行部署，直到部署成功
@@ -148,14 +147,14 @@ class Random_Algorithm:
                 # 重新选择一个节点进行部署
                 node = random.choice(node_list)
 
-        print("算法迭代次数：", count)
+        # print("算法迭代次数：", count)
         # 分析部署情况
-        self.analysis_state(self.state)
+        # self.analysis_state(self.state)
 
         deploy = get_deploy(self.state)
         rout = get_each_request_rout(deploy)
         T = cal_total_delay(deploy, rout)
-        print("T_RA:",T)
+        # print("T_RA:",T)
         return T
 
 

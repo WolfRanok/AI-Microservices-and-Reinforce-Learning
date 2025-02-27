@@ -9,7 +9,6 @@ PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
 from AIMICROSERVICE.Environment.NEW_ENV import *
 from AIMICROSERVICE.Environment.ENV_DEF import *
 
-MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class RLS_Algorithm:
     def option_ms(self):
@@ -102,7 +101,7 @@ class RLS_Algorithm:
         resource[NODE_NUM * 4: NODE_NUM * 5][node] += memory
         # 查看状态
         self.count+=1
-        self.analysis_state(state)
+        # self.analysis_state(state)
         return True
 
     def run_rls_algorithm(self, state):
@@ -112,7 +111,7 @@ class RLS_Algorithm:
         :return: state
         """
         self.state = state.copy()
-        self.analysis_state(self.state, flag=True)  # 查看一下初试状态
+        # self.analysis_state(self.state, flag=True)  # 查看一下初试状态
         
         
         while True:  # 开始部署
@@ -122,7 +121,7 @@ class RLS_Algorithm:
 
             # 部署完成退出循环
             if index == -1:
-                print("部署完成")
+                # print("部署完成")
                 break
 
             # 对于指定的微服务选择一个节点进行部署，直到部署成功
@@ -134,13 +133,13 @@ class RLS_Algorithm:
                 self.ms_image[index] = 0
 
         # 分析部署情况,查看一下最终状态
-        self.analysis_state(self.state)  
+        # self.analysis_state(self.state)
 
         # 生成路由，计算时延
         self.deploy = get_deploy(self.state)
         rout = get_each_request_rout(self.deploy)
         delay = cal_total_delay(self.deploy,rout)
-        print("T_RLS:",delay)
+        # print("T_RLS:", delay)
         return delay
 
 
