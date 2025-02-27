@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 
-from AIMICROSERVICE.Environment.NEW_ENV import *
+from Environment.NEW_ENV import *
 MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 # class Actor(nn.Module):

@@ -3,8 +3,7 @@
 """
 import numpy as np
 
-from AIMICROSERVICE.DAC.Network import *
-from AIMICROSERVICE.Environment.NEW_ENV import *
+from Agent import *
 
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
@@ -17,13 +16,12 @@ class Environment_Interaction:
     def __init__(self, ms_image, all_ms):
         """
         初始化时，需要给实例数
-        :param ms_image: 实例数镜像，该参数是一个二维变量USER_NUM * MA_AIMS_NUM
+        :param ms_image: 实例数镜像
         """
         # 初始化资源镜像
         self.org_ms_image = ms_image.copy()
         self.each_image = np.sum(ms_image, -1)
         self.each_request_image = self.each_image.copy()
-        # print(ms_image.shape,USER_NUM * MA_AIMS_NUM)
         ms_image = np.reshape(ms_image, (USER_NUM * MA_AIMS_NUM))
         self.old_ms_image = ms_image.copy()
         self.ms_image = self.old_ms_image.copy()
@@ -33,17 +31,13 @@ class Environment_Interaction:
         self.adv = np.full((sum(ms_image).astype(int),), 0)
         self.T_list = np.full((sum(ms_image).astype(int),), 0.0)
         self.T_min_list = np.full((sum(ms_image).astype(int),), cal_total_delay(get_deploy(initial_state()),get_each_request_rout(get_deploy(initial_state()))))
-        self.dep_ms_count = -1
+        self.dep_ms_count = -1 # 表示尝试部署过的微服务实例数量-1
         self.ms_deploy_idx = get_ms_deploy_order()
         self.each_ms_num = self.cal_each_ms_num()
-        print(self.each_ms_num)
+        self.now_dep_ms_class_num = 0
         # 计数器
         self.count = 0
     def cal_each_ms_num(self):
-        """
-        计算每一个（AI）微服务的镜像需求数
-        :return:
-        """
         each_ms_num = np.zeros((MA_AIMS_NUM))
         for i in range(MA_AIMS_NUM):
             for j in range(USER_NUM):
@@ -63,96 +57,99 @@ class Environment_Interaction:
                 index = i % (MA_AIMS_NUM)
                 dep_is_over = False
                 break
-        # for idx in range(len(self.ms_image)):
-        #     if self.ms_image[idx]!=0:
-        #         index = idx%(MA_AIMS_NUM)
-        #         dep_is_over=False
-        #         break
         if dep_is_over:
             return -1,
         return index
     def get_action(self, index, action_probabilities):
         """
-        e-贪婪策略选择行动节点，对指定的服务类型按照概率选择一个行动
+        对指定的服务类型按照概率选择一个行动
         :param index: 服务类型
         :param action_probabilities: 行动概率分布
         :return: action
         """
-        p = random.uniform(0,1) # 随机生成浮点数[0,1)
-        e_p = max(0.8,torch.argmax(action_probabilities[0]).item())
-        if p > e_p:
-            action = torch.argmax(action_probabilities[0]).item()
-
+        p = random.uniform(0,1)
+        e_p = max(0.8,torch.argmax(action_probabilities).item())
+        if p < e_p:
+            action = torch.argmax(action_probabilities).item()
         else:
-            action = torch.multinomial(action_probabilities[0], num_samples=1).item()
+            action = torch.multinomial(action_probabilities, num_samples=1).item()
         # action = torch.multinomial(action_probabilities, num_samples=1).item()
 
         return action
     def get_next_state(self,index, state, action):
         """
         依照概率选择下一个状态
-        :param state: index
+        :param state: index 微服务编号，AI微服务接着基础微服务后面继续编号
         :param state: state
         :param action: action概率分布
         :return: None
         """
         # 状态初始化
         next_state = state.copy()
-
         # 对next_state 进行分配，注意这里的next_state 传入的是引用变量对象
-        self.allocate_resources(index, next_state, action)
-        # forward = get_rout(next_state)
-        # rout = get_each_request_rout(get_deploy(next_state))
-        # rout_to_forward(rout,forward)
+        # print(self.now_dep_ms_class_num)
+        if self.is_it_sufficient(index, state, action) and sum(self.ms_image) != 0:
+            # 可以分配资源，开始分配
+            ## 分配实例数
+            # print(state)
+            # 更新state中实时记录的ms_image
+            # self.ms_image[self.ms_deploy_idx[self.now_dep_ms_class_num%len(self.ms_deploy_idx)]] -= 1
+            # print(self.ms_image)
+            this_ms_index = index
+            for i in range(USER_NUM):
+                if self.ms_image[index + i * MA_AIMS_NUM] != 0:
+                    self.each_request_image[i] -= 1
+                    this_ms_index = index + i * MA_AIMS_NUM
+                    break
+            self.ms_image[this_ms_index] -= 1
+
+            # 改变服务部署方案与资源剩余情况
+            next_state = updata_state(state, action, index)
+            # start = MA_AIMS_NUM*NODE_NUM+ 3*2*NODE_NUM
+            # state[start:start+USER_NUM*MA_AIMS_NUM] = self.ms_image.copy()
+        else:
+            # 此时，微服务实例部署失败，但是还是需要更新state中的ms_image，但不更新部署方案和资源占用情况
+            # 更新state中实时记录的ms_image
+            # self.ms_image[self.ms_deploy_idx[self.now_dep_ms_class_num%len(self.ms_deploy_idx)]] -= 1
+            # print(self.ms_image)
+
+            this_ms_index = index
+            for i in range(USER_NUM):
+                if self.ms_image[index + i * MA_AIMS_NUM] != 0:
+                    self.each_request_image[i] -= 1
+                    this_ms_index = index + i * MA_AIMS_NUM
+                    break
+            self.ms_image[this_ms_index] -= 1
+            # start = MA_AIMS_NUM * NODE_NUM + 3 * 2 * NODE_NUM
+            # state[start:start + USER_NUM * MA_AIMS_NUM] = self.ms_image.copy()
+
+        # 更新一下下一次需要部署的微服务实例信息以及所属的用户请求信息
+        if sum(self.ms_image) != 0:
+            start = MA_AIMS_NUM * NODE_NUM + 3 * 2 * NODE_NUM
+            cur_ms_information = state[start:(start + 4)]
+            cur_request_information = state[(start + 4):(start + 8)]
+            # print(cur_ms_information)
+            # print(cur_request_information)
+            # print(users[int(self.ms_deploy_idx[self.now_dep_ms_class_num]/MA_AIMS_NUM)].id)
+            # print(users[int(self.ms_deploy_idx[self.now_dep_ms_class_num]/MA_AIMS_NUM)].get_lamda())
+            # print(self.ms_image[self.ms_deploy_idx[self.now_dep_ms_class_num+7]])
+            if self.ms_image[self.ms_deploy_idx[self.now_dep_ms_class_num%len(self.ms_deploy_idx)]] == 0:
+                self.now_dep_ms_class_num += 1
+                next_ms = all_ms[self.ms_deploy_idx[self.now_dep_ms_class_num%len(self.ms_deploy_idx)] % MA_AIMS_NUM]
+                cur_ms_information[0] = next_ms.id
+                cur_ms_information[1] = next_ms.get_cpu()
+                cur_ms_information[2] = next_ms.get_gpu()
+                cur_ms_information[3] = next_ms.get_memory()
+                next_request = users[int(self.ms_deploy_idx[self.now_dep_ms_class_num%len(self.ms_deploy_idx)] / MA_AIMS_NUM)]
+                cur_request_information[0] = next_request.id
+                cur_request_information[1] = next_request.get_lamda()
+                next_request_x, next_request_y = next_request.get_location()
+                cur_request_information[2] = next_request_x
+                cur_request_information[3] = next_request_y
+            state[start:(start + 4)] = cur_ms_information
+            state[(start + 4):(start + 8)] = cur_request_information
         return next_state
-    def allocate_resources(self, index, state, action):
-        """
-        给某一个服务分配资源，若不够用则返回-1
-        :param index: 选择的微服务类型
-        :param state: 状态
-        :param action: 行动，即选择部署的节点
-        :return: bool 表示是否分配成功
-        """
-        if not self.is_it_sufficient(index, state, action) or sum(self.ms_image)==0:
-            return False
 
-        # 分离得到部署情况和资源情况
-        deploy = get_deploy(state)
-        resource = get_resource(state)
-
-        # 需要消耗的资源情况
-        cpu = self.ms_aims[index].get_cpu()
-        gpu = self.ms_aims[index].get_gpu()
-        memory = self.ms_aims[index].get_memory()
-
-        # 可以分配资源，开始分配
-        ## 分配实例数
-        # print(state)
-        this_ms_index = index
-        for i in range(USER_NUM):
-            if self.ms_image[index+i*MA_AIMS_NUM]!=0:
-                self.each_request_image[i] -= 1
-                this_ms_index = index+i*MA_AIMS_NUM
-                break
-        self.ms_image[this_ms_index] -= 1
-        start = MA_AIMS_NUM*NODE_NUM+ 3*2*NODE_NUM+ USER_NUM*(NODE_NUM*NODE_NUM+NODE_NUM)
-        state[start:start+USER_NUM*MA_AIMS_NUM] = self.ms_image.copy()
-        # print(state[start:start+USER_NUM*MA_AIMS_NUM])
-        deploy[index][action] += 1
-        # self.dep_ms_count += 1 # 已部署的实例数+1，指针后移
-        # print(f"已部署的微服务实例数量(不论成功与否){self.dep_ms_count}")
-        ## 配平相应的资源
-        # cpu分配
-        resource[NODE_NUM: NODE_NUM * 2][action] -= cpu
-        resource[:NODE_NUM][action] += cpu
-        # gpu分配
-        resource[NODE_NUM * 3: NODE_NUM * 4][action] -= gpu
-        resource[NODE_NUM * 2: NODE_NUM * 3][action] += gpu
-        # 内存分配
-        resource[NODE_NUM * 5:][action] -= memory
-        resource[NODE_NUM * 4: NODE_NUM * 5][action] += memory
-
-        return True
     def is_it_sufficient(self, index, state, action):
         """
         判断某一个服务资源是否够分
@@ -164,18 +161,15 @@ class Environment_Interaction:
 
         # 分离得到资源情况
         resource = get_resource(state)
-
         # 需要消耗的资源情况
         cpu = self.ms_aims[index].get_cpu()
         gpu = self.ms_aims[index].get_gpu()
         memory = self.ms_aims[index].get_memory()
-
         # 当前的资源状况
         # print(resource)
         now_cpu = resource[NODE_NUM: NODE_NUM * 2][action]
         now_gpu = resource[NODE_NUM * 3: NODE_NUM * 4][action]
         now_memory = resource[NODE_NUM * 5:][action]
-
         return now_cpu >= cpu and now_memory >= memory and now_gpu >= gpu
     def get_T(self, state):
         """
@@ -207,234 +201,30 @@ class Environment_Interaction:
         :param episode_count: 部署的轮数
         :return: 一个整数，用于表示rework
         """
-        # '''reward1'''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # if flag != -1:  # 部署成功
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     if episode_count == 0:  # 部署第一个节点
-        #         r = self.C1 * (self.T_min_list[idx] - T_next)
-        #     elif T_next <= self.T_min_list[idx]:  # 产生了更好的方案
-        #         r = self.C3 * (self.T_min_list[idx] - T_next) + 0.1
-        #     elif T_next < T:
-        #         r = self.C4 * (T - T_next)
-        #     else:
-        #         r = self.C4 * (self.T_min_list[idx] - T_next)
-        #     self.T_min_list[idx] = min(self.T_min_list[idx], T_next)
-        #     if self.T_min_list[idx] == T_next:
-        #         self.adv[idx] = 1
-        #     else:
-        #         self.adv[idx] = 0
-        #     self.T_list[idx] = T_next
-        #     self.T_min = self.T_min_list[idx]  # 更新最小时延
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     return PUNISHMENT_DEPLOY_FAIL
-
-        # '''reward2'''
-        # request_id = USER_NUM-1
-        # for idx in range(USER_NUM):
-        #     if self.each_request_image[idx]!=0:
-        #         request_id = idx
-        # each_T_next_list = self.get_each_T(next_state)
-        # each_T_list = self.get_each_T(state)
-        # T_next = each_T_next_list[request_id]
-        # T = each_T_list[request_id]
-        # if flag != -1:  # 部署成功
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     if episode_count == 0:  # 部署第一个节点
-        #         r = self.C1 * (self.T_min_list[idx] - T_next)
-        #     elif T_next <= self.T_min_list[idx]:  # 产生了更好的方案
-        #         r = self.C3 * (self.T_min_list[idx] - T_next) + 0.1
-        #     elif T_next < T:
-        #         r = self.C4 * (T - T_next)
-        #     else:
-        #         r = self.C4 * (self.T_min_list[idx] - T_next)
-        #     self.T_min_list[idx] = min(self.T_min_list[idx], T_next)
-        #     if self.T_min_list[idx] == T_next:
-        #         self.adv[idx] = 1
-        #     else:
-        #         self.adv[idx] = 0
-        #     self.T_list[idx] = T_next
-        #     self.T_min = self.T_min_list[idx]  # 更新最小时延
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     return PUNISHMENT_DEPLOY_FAIL
-
-
-        # '''reward3'''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # idx = self.dep_ms_count % self.T_min_list.size
-        # self.T_list[idx] = T_next
-        # if flag!=-1:
-        #     # if T_next<=T and T_next <= self.T_min_list[idx]+1:
-        #     #     r = (T- T_next)*0.2+(self.T_min_list[idx]-T_next)*0.5+1.5
-        #     #     self.T_min_list[idx] = T_next
-        #     # elif T_next<T:
-        #     #     r = (T- T_next)*0.2+0.5
-        #     # else:
-        #     #     r = (T-T_next)*0.1-0.5
-        #     r = (T-T_next)*0.5-1
-        #     return r
-        # else:
-        #     return PUNISHMENT_DEPLOY_FAIL
-        # '''reward4'''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # loadb = cal_load_balance(next_state)
-        # _,T_max = cal_each_D_max()
-        # if flag != -1:  # 部署成功
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     if episode_count == 0:  # 部署第一个节点
-        #         r = self.C1*(T_max-T_next)
-        #     elif self.T_min_list[idx]>T_next:
-        #         r = self.C2+self.C1*(T-T_next)+(self.T_min_list[idx]-T_next)-self.C1*loadb
-        #         self.T_min_list[idx] = T_next
-        #     elif T>T_next:
-        #         r = self.C2+self.C1*(T-T_next)-self.C1*loadb
-        #     else:
-        #         r = -0.5+0.2*(T-T_next)+0.2*(self.T_min_list[idx]-T_next)-self.C1*loadb
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     return PUNISHMENT_DEPLOY_FAIL
-        # '''reward5
-        #     迭代到400左右，延迟稳定在40-50，但是随着训练的增加会出现结果突然变坏，获得的奖励值突然下降；
-        #     由于奖励函数的设计会导致网络参数一直在改变，缓慢改变最终会导致梯度爆炸
-        # '''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # loadb = cal_load_balance(next_state)
-        # _, T_max = cal_each_D_max()
-        # if flag != -1:  # 部署成功
-        #     if T > T_next:
-        #         r = 0.01*(T_max-T_next)-0.01*loadb
-        #     else:
-        #         r = -0.01*loadb
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     if self.T_min_list[idx] > T_next:
-        #         self.T_min_list[idx] = T_next
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     return -0.01*loadb+PUNISHMENT_DEPLOY_FAIL
-        # '''reward6
-        #         '''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # loadb = cal_load_balance(next_state)
-        # _, T_max = cal_each_D_max()
-        # if flag != -1:  # 部署成功
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     if T > T_next and self.T_min_list[idx]+10 > T_next:
-        #         r = T_max/self.T_min_list[idx]*(0.01*(T_max-T_next)+0.1*(self.T_min_list[idx]-T_next)+1)-0.1 * loadb
-        #     else:
-        #         r = 0.01*(T_max - T_next) - 0.1 * loadb
-        #     self.T_list[idx] = T_next
-        #     if self.T_min_list[idx] > T_next:
-        #         self.T_min_list[idx] = T_next
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     return PUNISHMENT_DEPLOY_FAIL
-        # '''reward7
-        #                 '''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # loadb = cal_load_balance(next_state)
-        # _, T_max = cal_each_D_max()
-        # if flag != -1:  # 部署成功
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     if T > T_next:
-        #         r = 0.5-0.01*T_next-loadb
-        #     else:
-        #         r = -0.01*T_next-loadb
-        #     self.T_list[idx] = T_next
-        #     if self.T_min_list[idx] > T_next:
-        #         self.T_min_list[idx] = T_next
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     idx = self.dep_ms_count % self.T_min_list.size
-        #     self.T_list[idx] = T_next
-        #     return PUNISHMENT_DEPLOY_FAIL
-        # '''
-        # 采用了墨尔本真实数据集中的真实节点位置信息与用户位置信息
-        # '''
-        # '''reward8'''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # loadb = cal_load_balance(next_state)
-        # _, T_max = cal_each_D_max()
-        # idx = self.dep_ms_count % self.T_min_list.size
-        # self.T_list[idx] = T_next
-        # if self.T_min_list[idx] > T_next:
-        #     self.T_min_list[idx] = T_next
-        # if flag != -1:  # 部署成功
-        #     # if self.T_min_list[idx]+10 > T_next:
-        #     #     r = 5 + 0.5*(self.T_min_list[idx]-T_next)-loadb
-        #     # elif T_next > T:
-        #     #     r = 0.1*(T-T_next)-loadb
-        #     # else:
-        #     #     r = -loadb
-        #     if self.T_min_list[idx]+10 > T_next:
-        #         r = 5 + 0.5*(self.T_min_list[idx]-T_next)-loadb
-        #     elif T_next > T:
-        #         r = (T-T_next)-loadb
-        #     else:
-        #         r = 1-loadb
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     return PUNISHMENT_DEPLOY_FAIL*5
-        # '''
-        #         采用了墨尔本真实数据集中的真实节点位置信息与用户位置信息
-        #         '''
-        # '''reward8'''
-        # T_next = self.get_T(next_state)
-        # T = self.get_T(state)
-        # loadb = cal_load_balance(next_state)
-        # _, T_max = cal_each_D_max()
-        # idx = self.dep_ms_count % self.T_min_list.size
-        # if flag != -1:  # 部署成功
-        #     r = 0.1 * (T - T_next) - 10*loadb
-        #     if idx == self.T_min_list.size-1:
-        #         if self.T_min_list[idx] > T_next:
-        #             r += self.T_min_list[idx] - T_next
-        #             print(r)
-        #         else:
-        #             r += 0.1*(self.T_min_list[idx]-T_next)
-        #             print(r)
-        #     self.T_list[idx] = T_next
-        #     if self.T_min_list[idx] > T_next:
-        #         self.T_min_list[idx] = T_next
-        #     return r
-        # else:  # 部署失败, 基于惩罚
-        #     return PUNISHMENT_DEPLOY_FAIL*3
-        '''
-                        采用了墨尔本真实数据集中的真实节点位置信息与用户位置信息
-                        '''
-        '''reward8'''
         T_next = self.get_T(next_state)
         T = self.get_T(state)
         loadb = cal_load_balance(next_state)
         _, T_max = cal_each_D_max()
         idx = self.dep_ms_count % self.T_min_list.size
         # print(idx)
-        if flag != -1:  # 部署成功
-            r = 1/self.each_ms_num[ms_index]
-        else:  # 部署失败, 基于惩罚
-            r = 0
+        # 奖励构成一：是否部署成功
+        if isinstance(all_ms[ms_index], MS):
+            if flag != -1:  # 部署成功
+                r = 1 / self.each_ms_num[ms_index]
+            else:  # 部署失败, 基于惩罚
+                r = 0
+        else:
+            if flag != -1:  # 部署成功
+                r = 10/self.each_ms_num[ms_index]
+            else:  # 部署失败, 基于惩罚
+                r = -5
+
+        # if self.T_min_list[idx] >= T_next and self.T_min_list[idx] <= T_next+1:
+        #     r += 1 - loadb
+        # else:
+        #     r += 1 + 0.1 * (self.T_min_list[idx] - T_next) - loadb
         if idx == self.T_min_list.size-1:
-            # print("yes")
+            print("yes")
             if self.T_min_list[-1] == T_next:
                 r += 1 - loadb
             else:
@@ -457,7 +247,7 @@ class Environment_Interaction:
                 break
         self.ms_image[this_ms_index] -= 1
         # 更新状态中的微服务实例部署数量
-        start = MA_AIMS_NUM * NODE_NUM + 3 * 2 * NODE_NUM + USER_NUM * (NODE_NUM * NODE_NUM + NODE_NUM)
+        start = MA_AIMS_NUM * NODE_NUM + 3 * 2 * NODE_NUM
         state[start:start + USER_NUM * MA_AIMS_NUM] = self.ms_image.copy()
         # self.dep_ms_count += 1
         # print(f"已部署的微服务实例数量(不论成功与否){self.dep_ms_count}")
@@ -529,7 +319,7 @@ def environment_interaction_ms_initial():
     """
     # 制作一个待分配实例数，这里定义全局变量，使得函数外的全局变量可以受到影响
     global all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data, connected_lines, graph
-    all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data = environment_initialization()
+    all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker, bandwidth, data, request_data = environment_initialization()
     # ms_image = get_ms_image(all_ms_alpha, users, user_list, marker)
     ms_image = get_each_req_ms_image()
     # 初始化环境
@@ -567,4 +357,18 @@ if __name__ == '__main__':
     #     state = next_state
     #     print("部署奖励：", r)
     e = environment_interaction_ms_initial()
-    print(len(e.ms_image),e.ms_image)
+
+    print(e.ms_deploy_idx)
+    print(e.ms_image)
+    state = initial_state()
+    e.get_next_state(1,state,1)
+    for u in users:
+        print(f"请求到达率{u.lamda}", end=' ')
+        print(' ')
+        print("服务请求：", end=' ')
+        for i in requests.get(u):
+            print(i.id, end=' ')
+        print(' ')
+        for i in marker.get(u):
+            print(i, end=' ')
+        print(' ')

@@ -6,8 +6,8 @@ import torch
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
 
-from AIMICROSERVICE.Environment.NEW_ENV import *
-from AIMICROSERVICE.Environment.ENV_DEF import *
+from Environment.NEW_ENV import *
+from Environment.ENV_DEF import *
 
 
 class RLS_Algorithm:

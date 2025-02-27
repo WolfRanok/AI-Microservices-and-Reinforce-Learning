@@ -1,7 +1,7 @@
 """
 该脚本用于实现微服务的环境交互工作
 """
-from AIMICROSERVICE.DAC.Network import *
+from DAC.Network import *
 
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚

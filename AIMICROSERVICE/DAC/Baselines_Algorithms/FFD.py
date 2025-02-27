@@ -2,8 +2,8 @@
 首次适应递减算法，每次对需求最大的微服务进行随机部署
 部署时，将节点按未利用资源率从高到低排序，这样在分配任务时优先考虑未利用率高的节点，直到部署成功
 """
-from AIMICROSERVICE.Environment.NEW_ENV import *
-from AIMICROSERVICE.Environment.ENV_DEF import *
+from Environment.NEW_ENV import *
+from Environment.ENV_DEF import *
 
 class FFD_Algorithm:
     def option_ms(self):

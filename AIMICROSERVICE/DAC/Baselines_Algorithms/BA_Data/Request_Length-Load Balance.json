@@ -1,102 +1,167 @@
 [
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.02098589722755416,
+        "Load_RA": 0.05663542796768585,
+        "Load_RLS": 0.25774978572772445,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 1
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.0197490842459194,
+        "Load_RA": 0.025760989431182338,
+        "Load_RLS": 0.27585502419687746,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 2
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.02403447800584643,
+        "Load_RA": 0.024350753083266702,
+        "Load_RLS": 0.28743463142493086,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 3
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.02124984424880233,
+        "Load_RA": 0.04992350483446857,
+        "Load_RLS": 0.2823300198850104,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 4
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.020659494095522923,
+        "Load_RA": 0.0328738501594337,
+        "Load_RLS": 0.2868955890925707,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 5
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.021840925432436542,
+        "Load_RA": 0.06998258744879411,
+        "Load_RLS": 0.29129720907799117,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 6
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.024550317443136745,
+        "Load_RA": 0.05686433768153933,
+        "Load_RLS": 0.2898306368526322,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 7
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.0227981446606998,
+        "Load_RA": 0.08125395603093043,
+        "Load_RLS": 0.28227058332678345,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 8
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.02085740027415517,
+        "Load_RA": 0.06025299737310601,
+        "Load_RLS": 0.2975740289928227,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 9
     },
     {
-        "Load_FFD": 0.09803035133452136,
-        "Load_RA": 0.20255544610295478,
-        "Load_RLS": 0.3825496415147882,
+        "Load_FFD": 0.02129223461315145,
+        "Load_RA": 0.06347194855947524,
+        "Load_RLS": 0.28481035756353795,
         "NODE_NUM": 10,
         "MS_NUM": 15,
         "AIMS_NUM": 3,
         "USER_NUM": 10,
-        "RESOURCE": 10
+        "RESOURCE": 10,
+        "Request_Length": 10
+    },
+    {
+        "Load_FFD": 0.022506364553718974,
+        "Load_RA": 0.08344548390286083,
+        "Load_RLS": 0.2679323337604209,
+        "NODE_NUM": 10,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10,
+        "Request_Length": 11
+    },
+    {
+        "Load_FFD": 0.024023396183639287,
+        "Load_RA": 0.07320133261526371,
+        "Load_RLS": 0.26386187319651433,
+        "NODE_NUM": 10,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10,
+        "Request_Length": 12
+    },
+    {
+        "Load_FFD": 0.02263040455927466,
+        "Load_RA": 0.07021560534950821,
+        "Load_RLS": 0.26439849544370714,
+        "NODE_NUM": 10,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10,
+        "Request_Length": 13
+    },
+    {
+        "Load_FFD": 0.023217040058076982,
+        "Load_RA": 0.07962762552650149,
+        "Load_RLS": 0.2666931338564873,
+        "NODE_NUM": 10,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10,
+        "Request_Length": 14
+    },
+    {
+        "Load_FFD": 0.022924839045538763,
+        "Load_RA": 0.06140994434529609,
+        "Load_RLS": 0.27264825820585836,
+        "NODE_NUM": 10,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10,
+        "Request_Length": 15
     }
 ]

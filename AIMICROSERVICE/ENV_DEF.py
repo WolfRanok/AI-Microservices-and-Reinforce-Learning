@@ -10,8 +10,7 @@ USER_NUM = 10
 RESOURCE = 3
 MA_AIMS_NUM = MS_NUM+AIMS_NUM
 
-random.seed(123)
-np.random.seed(123)
+
 class MS:
     '''
     基础微服务拥有两种资源类型
@@ -138,7 +137,6 @@ class USER:
         num_of_MS = random.randint(3, 4)
         num_of_AIMS = random.randint(1, 2)
         for _ in range(num_of_MS):
-            # print(ms_list)
             ms = random.choice(ms_list)
             request_service.append(ms)
             request_service_mark.append(0)
@@ -169,8 +167,8 @@ def aims_initial():
 # list
 # [USER0,USER1,...]
 def user_initial():
-    x_node = np.loadtxt(open(r"users.CSV"), delimiter=",", skiprows=1, usecols=[1])
-    y_node = np.loadtxt(open(r"users.CSV"), delimiter=",", skiprows=1, usecols=[2])
+    x_node = np.loadtxt(open("users.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    y_node = np.loadtxt(open("users.CSV"), delimiter=",", skiprows=1, usecols=[2])
     user_list = []
     for i in range(USER_NUM):
         user_list.append(USER(i,x_node[i],y_node[i]))
@@ -264,17 +262,30 @@ def get_data_with_ms():
         data.append(d)
     return data
 
+def get_data_with_request(users,requests, ms_data):
+    data = []
+    for user in users:
+        request = requests.get(user)
+        total_data = 0
+        for item in request:
+            if isinstance(item,MS):
+                total_data += ms_data[item.id]
+            else:
+                total_data += ms_data[MS_NUM+item.id]
+        data.append(total_data)
+    return data
+
 def cal_dis(node1,node2):
     disx = (node1.x - node2.x) ** 2
     disy = (node1.y - node2.y) ** 2
     dis = math.sqrt(disx + disy)
-    return dis
+    return dis*100
 
 def cal_dis_user_node(user, node):
     disx = (node.x- user.x) ** 2
     disy = (node.y - user.y) ** 2
     dis = math.sqrt(disx + disy)
-    return dis
+    return dis*100
 
 def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     """
@@ -283,45 +294,6 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     """
     connected_lines = []
     V = [[0] * NODE_NUM for _ in range(NODE_NUM)]
-    # range_factor = 1
-    # def is_fully_connected(lines, n):
-    #     """
-    #     检查图是否完全连通。
-    #     """
-    #     # 构建邻接表
-    #     adjacency_list = {i: [] for i in range(n)}
-    #     for line in lines:
-    #         node1, node2 = line
-    #         adjacency_list[node1].append(node2)
-    #         adjacency_list[node2].append(node1)
-    #     # 深度优先搜索检查连通性
-    #     visited = set()
-    #     stack = [0]
-    #     while stack:
-    #         current = stack.pop()
-    #         if current not in visited:
-    #             visited.add(current)
-    #             stack.extend(adjacency_list[current])
-    #
-    #     return len(visited) == n
-    # while True:
-    #     for i in range(len(nodes)):
-    #         for j in range(len(nodes)):
-    #             if i==j:
-    #                 V[i][j] = 1
-    #             if i != j:
-    #                 dist = cal_dis(nodes[i], nodes[j])
-    #                 if dist <= initial_range * range_factor and (i, j) not in connected_lines and (j, i) not in connected_lines:
-    #                     if sum(V[i])>3:
-    #                         # 减少服务器之间连接的稠密程度
-    #                         continue
-    #                     connected_lines.append((i, j))
-    #                     V[i][j]=1
-    #                     V[j][i]=1
-    #     if is_fully_connected(connected_lines, len(nodes)):
-    #         break  # 完全连通，结束循环
-    #     else:
-    #         range_factor += range_step
     for i in range(len(nodes)):
         for j in range(len(nodes)):
             if i==j:
@@ -334,6 +306,8 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     return connected_lines, V
 
 def environment_initialization():
+    random.seed(123)
+    np.random.seed(123)
     ms = ms_initial()  # 基础微服务
     aims = aims_initial()  # AI微服务
     all_ms = np.append(ms,aims)  # 所有的微服务集合，可以用下标来区别基础和AI
@@ -345,16 +319,18 @@ def environment_initialization():
     service_lamda = get_user_lamda(user)  # 用户服务请求到达率
     bandwidth = get_bandwidth_with_node()  # 服务器带宽资源
     data = get_data_with_ms()  # 微服务数据大小
-    users, user_list, marker = get_user_request(user)  # 获得用户集，用户请求集，服务请求标记集
-    # connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)  # 初始化网络图和服务器连接
-    return all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker,\
-        bandwidth, data
+    users, requests, marker = get_user_request(user)  # 获得用户集，用户请求集，服务请求标记集
+    request_data = get_data_with_request(users, requests, data)
+
+    return all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker,\
+        bandwidth, data, request_data
 
 if __name__ == '__main__':
     ms = ms_initial()
     aims = aims_initial()
     user = user_initial()
     node = edge_initial()
+    print(cal_dis(node[0],node[1]))
     for n in node:
         print(f"服务器{n.id}的cpu数量为:{n.cpu},gpu数量为:{n.gpu},mem数量为:{n.memory}")
     B = get_bandwidth_with_node()

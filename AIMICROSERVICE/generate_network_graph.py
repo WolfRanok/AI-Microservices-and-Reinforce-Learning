@@ -1,7 +1,7 @@
 import random
 
 import numpy as np
-from Environment.ENV_DEF import *
+from AIMICROSERVICE.Environment.ENV_DEF import *
 
 x_node = np.loadtxt(open("edge_node.CSV"),delimiter=",",skiprows=1,usecols=[1])
 y_node = np.loadtxt(open("edge_node.CSV"),delimiter=",",skiprows=1,usecols=[2])

@@ -1,1 +1,102 @@
-[]
+[
+    {
+        "Load_FFD": 0.004620072173471538,
+        "Load_RA": 0.007868742422001288,
+        "Load_RLS": 0.04027751118564214,
+        "NODE_NUM": 2,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.04706334592756209,
+        "Load_RA": 0.06472084754861036,
+        "Load_RLS": 0.1121222644365676,
+        "NODE_NUM": 4,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.015691575769974223,
+        "Load_RA": 0.03133122187811804,
+        "Load_RLS": 0.2667515735206615,
+        "NODE_NUM": 6,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.009486985791991009,
+        "Load_RA": 0.03675078421216724,
+        "Load_RLS": 0.29542373042115344,
+        "NODE_NUM": 8,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.01898854311453244,
+        "Load_RA": 0.03347736161910522,
+        "Load_RLS": 0.2805797067477921,
+        "NODE_NUM": 10,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.014575582817538424,
+        "Load_RA": 0.05965984976827793,
+        "Load_RLS": 0.3005280248958266,
+        "NODE_NUM": 12,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.00965821656299437,
+        "Load_RA": 0.03583672420567609,
+        "Load_RLS": 0.2624507438128436,
+        "NODE_NUM": 14,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.009868389590497992,
+        "Load_RA": 0.03937880589775573,
+        "Load_RLS": 0.23350938862747883,
+        "NODE_NUM": 16,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.005711839826056307,
+        "Load_RA": 0.02481558333852467,
+        "Load_RLS": 0.23478398562731262,
+        "NODE_NUM": 18,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    },
+    {
+        "Load_FFD": 0.006603446246944132,
+        "Load_RA": 0.025570008299906327,
+        "Load_RLS": 0.23932888498779317,
+        "NODE_NUM": 20,
+        "MS_NUM": 15,
+        "AIMS_NUM": 3,
+        "USER_NUM": 10,
+        "RESOURCE": 10
+    }
+]
