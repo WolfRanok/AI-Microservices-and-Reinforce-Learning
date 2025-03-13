@@ -37,7 +37,7 @@ def initial_state():
     resource = np.append(CPU, GPU)
     resource = np.append(resource, Memory)
     state = np.append(deploy_state, resource)
-    state = np.append(state, rout_state)
+    # state = np.append(state, rout_state)  # 这个是路由情况
     all_user_state = np.array([])
     for user in users:
         id = user.id
@@ -154,6 +154,20 @@ def get_each_req_ms_image():
                 ms_image[user.id][item1.id+MS_NUM] = math.ceil(lamda / all_ms_alpha[item1.id+MS_NUM])
     return ms_image
 
+def get_ms_deploy_order():
+    idx_of_ms = []
+    for user in users:
+        request = requests.get(user)
+        for ms in request:
+            if isinstance(ms, MS):
+                idx = user.id * MA_AIMS_NUM + ms.id
+            else:
+                idx = user.id * MA_AIMS_NUM + ms.id + MS_NUM
+            idx_of_ms.append(idx)
+    # for idx in idx_of_ms:
+    #     print(ms_image[int((idx-idx%18)/18)][idx%18])
+    return idx_of_ms
+
 def optimize_rout_node(ms_node_dict, request):
     '''
     去除不可达的节点
@@ -217,6 +231,38 @@ def optimize_rout_node(ms_node_dict, request):
             result[ms_item] = new_node
         sur_ms = ms_item
     return result
+
+def cal_load_balance(state):
+    """
+    用于计算负载均衡
+    :param state: 状态
+    :return:
+    """
+    resource = get_resource(state)
+    cpu_occ = resource[0:NODE_NUM]
+    total_cpu = resource[0:NODE_NUM] + resource[NODE_NUM:NODE_NUM * 2]
+    gpu_occ = resource[NODE_NUM * 2:NODE_NUM * 3]
+    total_gpu = resource[NODE_NUM * 2:NODE_NUM * 3] + resource[NODE_NUM * 3:NODE_NUM * 4]
+    mem_occ = resource[NODE_NUM * 4:NODE_NUM * 5]
+    total_mem = resource[NODE_NUM * 4:NODE_NUM * 5] + resource[NODE_NUM * 5:NODE_NUM * 6]
+
+    u_cpu = cpu_occ / total_cpu
+    u_gpu = np.zeros((NODE_NUM))
+    for r in range(NODE_NUM):
+        if total_gpu[r] != 0:
+            u_gpu[r] = gpu_occ[r] / total_gpu[r]
+    u_mem = mem_occ / total_mem
+
+    avg_cpu = np.full(u_cpu.size, np.mean(u_cpu))
+    avg_gpu = np.full(u_gpu.size, np.mean(u_gpu))
+    avg_mem = np.full(u_mem.size, np.mean(u_mem))
+
+    # print(u_cpu+u_gpu+u_mem)
+    v_cpu = np.mean((u_cpu - avg_cpu) ** 2)
+    v_gpu = np.mean((u_gpu - avg_gpu) ** 2)
+    v_mem = np.mean((u_mem - avg_mem) ** 2)
+
+    return v_cpu + v_gpu + v_mem
 
 def cal_probability(node2, ms, ms_node_list, deploy):
     '''

@@ -3,22 +3,21 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-MS_NUM = 4
+MS_NUM = 15
 AIMS_NUM = 3
 NODE_NUM = 10
-USER_NUM = 3
+USER_NUM = 10
 RESOURCE = 3
 MA_AIMS_NUM = MS_NUM+AIMS_NUM
 
-random.seed(123)
-np.random.seed(123)
+
 class MS:
     '''
     基础微服务拥有两种资源类型
     '''
     def __init__(self, id) -> None:
         self.id = id
-        self.alpha = random.randint(2, 4)
+        self.alpha = random.randint(10, 20)
         self.cpu = random.randint(1, 2)
         self.memory = random.randint(10, 15)
 
@@ -42,8 +41,8 @@ class AIMS:
     '''
     def __init__(self, id) -> None:
         self.id = id
-        self.dnn_num = random.randint(4, 6)
-        self.dnn_alpha = np.random.randint(low=5, high=8, size=self.dnn_num)
+        self.dnn_num = random.randint(2, 3)
+        self.dnn_alpha = np.random.randint(low=40, high=50, size=self.dnn_num)
         self.cpu = random.randint(5, 8)
         self.gpu = random.randint(1, 2)
         self.memory = random.randint(50, 80)
@@ -67,13 +66,19 @@ class EDGE_NODE:
     '''
     边缘节点，拥有位置信息，以及资源数量
     '''
-    def __init__(self, id) -> None:
+    def __init__(self, id,x,y,gpu) -> None:
         self.id = id
-        self.x = random.uniform(10, 100)
-        self.y = random.uniform(20, 80)
-        self.cpu = random.randint(15, 25)
-        self.gpu = random.randint(0,20)
-        self.memory = random.randint(300,400)
+        # self.x = random.uniform(10, 100)
+        # self.y = random.uniform(20, 80)
+        self.x = x
+        self.y = y
+        self.gpu = gpu
+        if gpu==0:
+            self.cpu = random.randint(12, 24)
+            self.memory = random.randint(400, 500)
+        else:
+            self.cpu = random.randint(48, 64)
+            self.memory = random.randint(800, 900)
 
     def get_location(self):
         return self.x, self.y
@@ -92,17 +97,19 @@ class USER:
     用户等价与服务请求
     拥有位置和流量
     '''
-    def __init__(self, id) -> None:
+    def __init__(self, id,x,y) -> None:
         self.id = id
-        self.lamda = random.randint(3,6)
-        self.x = random.uniform(0, 150)
-        self.y = random.uniform(0, 100)
+        self.lamda = random.randint(10,15)
+        # self.x = random.uniform(0, 150)
+        # self.y = random.uniform(0, 100)
+        self.x = x
+        self.y = y
 
     def get_lamda(self):
         return self.lamda
     def get_location(self):
         return  self.x, self.y
-    def get_request(self):
+    def get_func_request(self):
         '''
         用户会随机发出含有2-4个普通微服务和0-3个AI微服务的请求链
         :return:请求链，和用于判断微服务类型的标识符（0：普通微服务，1：AI微服务）
@@ -111,8 +118,24 @@ class USER:
         request_service_mark = []
         ms_list = ms_initial()
         aims_list = aims_initial()
-        num_of_MS = random.randint(2, 4)
-        num_of_AIMS = random.randint(0, 2)
+        num_of_MS = random.randint(3, 7)
+        for _ in range(num_of_MS):
+            ms = random.choice(ms_list)
+            request_service.append(ms)
+            request_service_mark.append(0)
+            ms_list.remove(ms)
+        return request_service, request_service_mark
+    def get_AI_request(self):
+        '''
+        用户会随机发出含有2-4个普通微服务和0-3个AI微服务的请求链
+        :return:请求链，和用于判断微服务类型的标识符（0：普通微服务，1：AI微服务）
+        '''
+        request_service = []
+        request_service_mark = []
+        ms_list = ms_initial()
+        aims_list = aims_initial()
+        num_of_MS = random.randint(3, 4)
+        num_of_AIMS = random.randint(1, 2)
         for _ in range(num_of_MS):
             ms = random.choice(ms_list)
             request_service.append(ms)
@@ -144,17 +167,33 @@ def aims_initial():
 # list
 # [USER0,USER1,...]
 def user_initial():
+    x_node = np.loadtxt(open("users.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    y_node = np.loadtxt(open("users.CSV"), delimiter=",", skiprows=1, usecols=[2])
     user_list = []
     for i in range(USER_NUM):
-        user_list.append(USER(i))
+        user_list.append(USER(i,x_node[i],y_node[i]))
     return user_list
 
 # edge initial
 # list[EDGE0,EDGE1,...]
 def edge_initial():
+    # edge_node_list = []
+    # for i in range(NODE_NUM):
+    #     edge_node_list.append(EDGE_NODE(i))
+    x_node = np.loadtxt(open("edge_node.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    x_node = x_node[:NODE_NUM]
+    y_node = np.loadtxt(open("edge_node.CSV"), delimiter=",", skiprows=1, usecols=[2])
+    y_node = y_node[:NODE_NUM]
+    x_mean = sum(x_node) / len(x_node)
+    y_mean = sum(y_node) / len(y_node)
     edge_node_list = []
     for i in range(NODE_NUM):
-        edge_node_list.append(EDGE_NODE(i))
+        gpu = 0
+        d=math.sqrt((x_mean - x_node[i]) ** 2 + (y_mean - y_node[i]) ** 2)*111
+        # print(f"中心到服务器{i}的距离{d}")
+        if d < 0.5:
+            gpu = random.randint(15,20)
+        edge_node_list.append(EDGE_NODE(i,x_node[i],y_node[i],gpu))
     return edge_node_list
 
 # ms list
@@ -190,7 +229,10 @@ def get_user_request(user):
     user_list = {}
     user_request_make_list = {}
     for item in user:
-        user_list[item], user_request_make_list[item] = item.get_request()
+        if item.id>=5:
+            user_list[item], user_request_make_list[item] = item.get_func_request()
+        else:
+            user_list[item], user_request_make_list[item] = item.get_AI_request()
     return user, user_list, user_request_make_list
 
 def get_bandwidth_with_node():
@@ -201,7 +243,7 @@ def get_bandwidth_with_node():
     '''
     bandwidth = []
     for _ in range(NODE_NUM):
-        b = random.randint(5, 10)
+        b = random.randint(5, 20)
         bandwidth.append(b)
     return bandwidth
 
@@ -220,17 +262,30 @@ def get_data_with_ms():
         data.append(d)
     return data
 
+def get_data_with_request(users,requests, ms_data):
+    data = []
+    for user in users:
+        request = requests.get(user)
+        total_data = 0
+        for item in request:
+            if isinstance(item,MS):
+                total_data += ms_data[item.id]
+            else:
+                total_data += ms_data[MS_NUM+item.id]
+        data.append(total_data)
+    return data
+
 def cal_dis(node1,node2):
     disx = (node1.x - node2.x) ** 2
     disy = (node1.y - node2.y) ** 2
     dis = math.sqrt(disx + disy)
-    return dis
+    return dis*100
 
 def cal_dis_user_node(user, node):
     disx = (node.x- user.x) ** 2
     disy = (node.y - user.y) ** 2
     dis = math.sqrt(disx + disy)
-    return dis
+    return dis*100
 
 def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     """
@@ -239,49 +294,21 @@ def connect_nodes_within_range(nodes, initial_range=10, range_step=1):
     """
     connected_lines = []
     V = [[0] * NODE_NUM for _ in range(NODE_NUM)]
-    range_factor = 1
-    def is_fully_connected(lines, n):
-        """
-        检查图是否完全连通。
-        """
-        # 构建邻接表
-        adjacency_list = {i: [] for i in range(n)}
-        for line in lines:
-            node1, node2 = line
-            adjacency_list[node1].append(node2)
-            adjacency_list[node2].append(node1)
-        # 深度优先搜索检查连通性
-        visited = set()
-        stack = [0]
-        while stack:
-            current = stack.pop()
-            if current not in visited:
-                visited.add(current)
-                stack.extend(adjacency_list[current])
-
-        return len(visited) == n
-    while True:
-        for i in range(len(nodes)):
-            for j in range(len(nodes)):
-                if i==j:
+    for i in range(len(nodes)):
+        for j in range(len(nodes)):
+            if i==j:
+                V[i][j] = 1
+            if i != j:
+                dis = cal_dis(nodes[i], nodes[j]) * 111
+                if dis < 0.66:
                     V[i][j] = 1
-                if i != j:
-                    dist = cal_dis(nodes[i], nodes[j])
-                    if dist <= initial_range * range_factor and (i, j) not in connected_lines and (j, i) not in connected_lines:
-                        if sum(V[i])>3:
-                            # 减少服务器之间连接的稠密程度
-                            continue
-                        connected_lines.append((i, j))
-                        V[i][j]=1
-                        V[j][i]=1
-        if is_fully_connected(connected_lines, len(nodes)):
-            break  # 完全连通，结束循环
-        else:
-            range_factor += range_step
-
+                    connected_lines.append((nodes[i].id, nodes[j].id))
     return connected_lines, V
 
+
 def environment_initialization():
+    random.seed(123)
+    np.random.seed(123)
     ms = ms_initial()  # 基础微服务
     aims = aims_initial()  # AI微服务
     all_ms = np.append(ms,aims)  # 所有的微服务集合，可以用下标来区别基础和AI
@@ -293,23 +320,23 @@ def environment_initialization():
     service_lamda = get_user_lamda(user)  # 用户服务请求到达率
     bandwidth = get_bandwidth_with_node()  # 服务器带宽资源
     data = get_data_with_ms()  # 微服务数据大小
-    users, user_list, marker = get_user_request(user)  # 获得用户集，用户请求集，服务请求标记集
-    # connected_lines, graph = connect_nodes_within_range(node_list, initial_range=10)  # 初始化网络图和服务器连接
-    return all_ms, all_ms_alpha, node_list, users, user_list, service_lamda, marker,\
-        bandwidth, data
+    users, requests, marker = get_user_request(user)  # 获得用户集，用户请求集，服务请求标记集
+    request_data = get_data_with_request(users, requests, data)
+
+    return all_ms, all_ms_alpha, node_list, users, requests, service_lamda, marker,\
+        bandwidth, data, request_data
 
 if __name__ == '__main__':
     ms = ms_initial()
     aims = aims_initial()
     user = user_initial()
     node = edge_initial()
-    for item in node:
-        print(item.id, end=' ')
-    print(' ')
+    print(cal_dis(node[0],node[1]))
+    for n in node:
+        print(f"服务器{n.id}的cpu数量为:{n.cpu},gpu数量为:{n.gpu},mem数量为:{n.memory}")
     B = get_bandwidth_with_node()
     print("带宽", B)
     _,user_list, _= get_user_request(user)
-    node_list = edge_initial()
     msalpha = get_ms_alpha(ms)
     aimsalpha = get_aims_alpha(aims)
     servicelamda = get_user_lamda(user)
@@ -322,31 +349,37 @@ if __name__ == '__main__':
     x_list = []
     y_list = []
     m = []
-    for i in node_list:
+    for i in node:
         x, y = i.get_location()
         x_list.append(x)
         y_list.append(y)
         m.append(i.id)
-        print(x,y,m)
     plt.scatter(x_list,y_list,c='red',marker='*')
-    for xi, yi, mi in zip(x_list, y_list,m):
+    x_mean = sum(x_list)/len(x_list)
+    y_mean = sum(y_list)/len(y_list)
+    plt.scatter(x_mean, y_mean, c='green', marker='*')
+    for xi, yi, mi in zip(x_list, y_list, m):
         # 给x和y添加偏移量，别和点重合在一起了
-        plt.text(xi, yi + 1, mi)
+        d = math.sqrt((x_mean-xi)**2+(y_mean-yi)**2)*111
+        if d<0.5:
+            print(mi)
+        plt.text(xi, yi, mi)
+    # 节点连接
+    connected_lines, V = connect_nodes_within_range(node, initial_range=10)
+    print(connected_lines)
+    for (node1, node2) in connected_lines:
+        node1, node2 = node[node1], node[node2]
+        plt.plot([node1.x, node2.x], [node1.y, node2.y], c='red', linestyle='-', linewidth=0.5)
+    # 画出用户
     user_x_list = []
     user_y_list = []
     for i in user_list:
         x, y = i.get_location()
         user_x_list.append(x)
         user_y_list.append(y)
-    # 节点连接
-
-    connected_lines, V = connect_nodes_within_range(node_list, initial_range=10)
-    print(V)
-    print(connected_lines)
-    for (node1, node2) in connected_lines:
-        node1, node2 = node_list[node1], node_list[node2]
-        plt.plot([node1.x, node2.x], [node1.y, node2.y], c='red', linestyle='-', linewidth=0.5)
-
-    plt.scatter(user_x_list, user_y_list,c='blue')
-    plt.tight_layout()
+    for xi, yi, mi in zip(user_x_list, user_y_list, m):
+        # 给x和y添加偏移量，别和点重合在一起了
+        plt.text(xi, yi, mi)
+    plt.scatter(user_x_list, user_y_list, c='blue')
+    # plt.tight_layout()
     plt.show()

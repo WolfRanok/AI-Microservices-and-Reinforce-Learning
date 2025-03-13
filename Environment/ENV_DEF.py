@@ -6,7 +6,7 @@ import numpy as np
 MS_NUM = 15
 AIMS_NUM = 3
 NODE_NUM = 10
-USER_NUM = 3
+USER_NUM = 10
 RESOURCE = 3
 MA_AIMS_NUM = MS_NUM+AIMS_NUM
 
@@ -67,13 +67,20 @@ class EDGE_NODE:
     '''
     边缘节点，拥有位置信息，以及资源数量
     '''
-    def __init__(self, id) -> None:
+
+    def __init__(self, id, x, y, gpu) -> None:
         self.id = id
-        self.x = random.uniform(10, 100)
-        self.y = random.uniform(20, 80)
-        self.cpu = random.randint(15, 25)
-        self.gpu = random.randint(0,20)
-        self.memory = random.randint(300,400)
+        # self.x = random.uniform(10, 100)
+        # self.y = random.uniform(20, 80)
+        self.x = x
+        self.y = y
+        self.gpu = gpu
+        if gpu == 0:
+            self.cpu = random.randint(12, 24)
+            self.memory = random.randint(400, 500)
+        else:
+            self.cpu = random.randint(48, 64)
+            self.memory = random.randint(800, 900)
 
     def get_location(self):
         return self.x, self.y
@@ -92,11 +99,14 @@ class USER:
     用户等价与服务请求
     拥有位置和流量
     '''
-    def __init__(self, id) -> None:
+
+    def __init__(self, id, x, y) -> None:
         self.id = id
-        self.lamda = random.randint(3,6)
-        self.x = random.uniform(0, 150)
-        self.y = random.uniform(0, 100)
+        self.lamda = random.randint(10, 15)
+        # self.x = random.uniform(0, 150)
+        # self.y = random.uniform(0, 100)
+        self.x = x
+        self.y = y
 
     def get_lamda(self):
         return self.lamda
@@ -144,17 +154,30 @@ def aims_initial():
 # list
 # [USER0,USER1,...]
 def user_initial():
+    x_node = np.loadtxt(open("../Environment/CSV/users_816.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    y_node = np.loadtxt(open("../Environment/CSV/users_816.CSV"), delimiter=",", skiprows=1, usecols=[2])
     user_list = []
     for i in range(USER_NUM):
-        user_list.append(USER(i))
+        user_list.append(USER(i, x_node[i], y_node[i]))
     return user_list
 
 # edge initial
 # list[EDGE0,EDGE1,...]
 def edge_initial():
+    x_node = np.loadtxt(open("../Environment/CSV/edge_node_125.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    x_node = x_node[:NODE_NUM]
+    y_node = np.loadtxt(open("../Environment/CSV/edge_node_125.CSV"), delimiter=",", skiprows=1, usecols=[2])
+    y_node = y_node[:NODE_NUM]
+    x_mean = sum(x_node) / len(x_node)
+    y_mean = sum(y_node) / len(y_node)
     edge_node_list = []
     for i in range(NODE_NUM):
-        edge_node_list.append(EDGE_NODE(i))
+        gpu = 0
+        d = math.sqrt((x_mean - x_node[i]) ** 2 + (y_mean - y_node[i]) ** 2) * 111
+        # print(f"中心到服务器{i}的距离{d}")
+        if d < 0.5:
+            gpu = random.randint(15, 20)
+        edge_node_list.append(EDGE_NODE(i, x_node[i], y_node[i], gpu))
     return edge_node_list
 
 # ms list

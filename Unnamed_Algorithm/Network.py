@@ -13,9 +13,14 @@ class Actor(nn.Module):
         self.node_num = node_num
 
         # 输入维度规模
+        # input_size = ma_aims_num * node_num \
+        #              + 3 * 2 * node_num \
+        #              + user_num*(node_num*node_num+node_num)\
+        #              + user_num*(4+ma_aims_num) \
+        #              + node_num*3
+        # 下面这个去掉了路由
         input_size = ma_aims_num * node_num \
                      + 3 * 2 * node_num \
-                     + user_num*(node_num*node_num+node_num)\
                      + user_num*(4+ma_aims_num) \
                      + node_num*3
 
@@ -67,9 +72,14 @@ class Critic(nn.Module):
         self.node_num = node_num
 
         # 输入维度
+        # input_size = ma_aims_num*node_num \
+        #              + 3*2*node_num \
+        #              + user_num*(node_num*node_num+node_num) \
+        #              + user_num * (4 + ma_aims_num) \
+        #              + node_num * 3 \
+        #              + ma_aims_num*node_num
         input_size = ma_aims_num*node_num \
                      + 3*2*node_num \
-                     + user_num*(node_num*node_num+node_num) \
                      + user_num * (4 + ma_aims_num) \
                      + node_num * 3 \
                      + ma_aims_num*node_num

@@ -7,6 +7,7 @@ from Agent import *
 
 torch.manual_seed(0)  # 随机数种子
 PUNISHMENT_DEPLOY_FAIL = -1  # 部署失败的惩罚
+from Environment.ENV_DEF import *
 
 class Environment_Interaction:
     # 奖励计算的参数

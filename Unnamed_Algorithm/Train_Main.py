@@ -12,7 +12,7 @@ import torch.optim as optim
 import csv
 import random
 
-ITERATION_NUM = 2000  # 训练轮数
+ITERATION_NUM = 100  # 训练轮数
 GAMMA = 0.99  # 衰减率[0-1]
 ACTOR_LR = 1e-4  # actor网络的学习率
 CRITIC_LR = 1e-4  # critic网络的学习率
@@ -75,7 +75,7 @@ class Agent:
                 'episode': [],
                 'sum_reward': [],
                 'loss': [],
-                'param_change': [],
+                'param_change_sum': [],
                 'T': [],
             }
 
@@ -156,7 +156,10 @@ class Agent:
         ## 记录误差总和，与参数改变量总和
         self.data['loss'] += critic_loss.item()
 
-        self.data['param_change'] += sum((abs(param.grad.norm().item()) for param in self.actor.parameters()))
+        param_change_num = sum((abs(param.grad.norm().item()) for param in self.actor.parameters()))
+        self.data['param_change_sum'] += param_change_num
+        self.record['param_change'].append(param_change_num)
+
 
 
     def soft_update(self):
@@ -194,6 +197,7 @@ class Agent:
             reward = self.environment_interaction.get_reward(-1, state, next_state, episode_count)
             return action, reward, next_state, index, False
 
+
     def train_ddpg_on_policy(self):
         """
         执行on_policy 算法的训练
@@ -207,12 +211,18 @@ class Agent:
             episode_count = 0  # 记录当前迭代的长度
             fail_count = 0  # 记录失败次数
             sum_fail_count = 0  # 记录未能部署上的节点数目
+
             self.data = {    # 数据字典
                 'episode': episode + self.old_episode_count,
                 'sum_reward': 0,
                 'loss': 0,
-                'param_change': 0,
+                'param_change_sum': 0,
                 'T': 0,
+            }
+
+            self.record = {
+                'episode': episode + self.old_episode_count,
+                'param_change': [],
             }
 
             while True:
@@ -226,6 +236,7 @@ class Agent:
                     done = 1
                 else:  # 继续生成下一个动作
                     next_action_probabilities = self.actor(next_state)
+
                 # 执行训练模型的训练
                 self.train_model(state, action_probabilities, reward, next_state, next_action_probabilities, done)
                 # 执行软更新
@@ -252,14 +263,8 @@ class Agent:
                     self.environment_interaction.pass_round(this_index)  # 跳过当前部署
 
             # print(get_deploy(state))
-            self.data['T'] = self.environment_interaction.get_T(state)
-            self.statistics.append(self.data)  # 记录训练数据
-            self.data_list['episode'].append(self.data['episode'])
-            self.data_list['sum_reward'].append(self.data['sum_reward'])
-            self.data_list['loss'].append(self.data['loss'])
-            self.data_list['param_change'].append(self.data['param_change'])
-            self.data_list['T'].append(self.data['T'])
-
+            # 记录数据
+            self.record_data(state)
 
             # print(f"第 {episode} 次的单次部署的最小时延变化为：{self.environment_interaction.T_min_list}")
             print(f"第 {episode} 次的单次部署的时延变化为：{self.environment_interaction.T_list}")
@@ -275,6 +280,21 @@ class Agent:
 
         print("训练完成")
 
+    def record_data(self, state):
+        """
+        用于记录数据的函数
+        :return:
+        """
+        self.data['T'] = self.environment_interaction.get_T(state)
+        self.statistics.append(self.data)  # 记录训练数据
+        self.data_list['episode'].append(self.data['episode'])
+        self.data_list['sum_reward'].append(self.data['sum_reward'])
+        self.data_list['loss'].append(self.data['loss'])
+        self.data_list['param_change_sum'].append(self.data['param_change_sum'])
+        self.data_list['T'].append(self.data['T'])
+
+        with open(f'Record/2025_3_6_{NODE_NUM}_{MS_NUM}_{AIMS_NUM}.json', 'w+') as f:
+            json.dump(self.record, f)
     def get_deterministic_deployment(self, state=None, environment_interaction=None):
         """
         对于给定的初始状态，生成一个部署方案
@@ -313,8 +333,8 @@ class Agent:
                 self.environment_interaction.pass_round(this_index)  # 跳过当前部署
                 fail_ms_count += 1
 
-        print(f"算法执行次数 {num} ,时延{self.environment_interaction.get_T(state)},一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上", )
-        self.environment_interaction.analysis_state(state)  # 测试专用
+        # print(f"算法执行次数 {num} ,时延{self.environment_interaction.get_T(state)},一共需要部署 {self.environment_interaction.sum_ms_aims} 个服务，其中有 {fail_ms_count} 个服务没有部署上", )
+        # self.environment_interaction.analysis_state(state)  # 测试专用
         return state  # 返回最终方案
 
     def save_model(self):
@@ -356,8 +376,8 @@ class Agent:
         :return: None
         """
 
-        actor_url = f"DAC/Model/2025_01_06_actor_target_model_10_4_3.pth.pth"
-        critic_url = f"DAC/Model/2025_01_06_critic_target_model_10_4_3.pth.pth"
+        actor_url = f"DAC/Model/2025_03_06_actor_target_model_10_4_3.pth.pth"
+        critic_url = f"DAC/Model/2025_03_06_critic_target_model_10_4_3.pth.pth"
 
         if os.path.exists(actor_url) and os.path.exists(critic_url):
             self.actor_target.load_state_dict(torch.load(actor_url))
@@ -388,8 +408,12 @@ class Agent:
 if __name__ == '__main__':
     agent = Agent()
     # print(agent.actor_target(state))
-    # agent.train()
-    f_state = agent.inference()
+    agent.train()
+    # state = agent.get_deterministic_deployment()
+    # T = agent.environment_interaction.get_T(state)
+    # LB = cal_load_balance(state)
+    # print(T, LB)
+    # f_state = agent.inference()
     # f_deploy = get_deploy(f_state)
     # f_rout = get_each_request_rout(f_deploy)
     # print(f_deploy)

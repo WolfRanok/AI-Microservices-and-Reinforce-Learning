@@ -7,18 +7,6 @@ from Environment.ENV_DEF import *
 MA_AIMS_NUM = MS_NUM + AIMS_NUM
 
 class Random_Algorithm:
-    def option_ms(self):
-        """
-        选择一个微服务进行分配
-        根据当前所需的实例数情况，返回最高需求量的那个
-        返回-1表示已经全部部署完毕
-        :return:MaxIndex
-        """
-        index = np.argmax(self.ms_image)
-        if self.ms_image[index] == 0:
-            return -1
-        return index
-
     def refresh(self):
         """
         刷新微服务部署需求

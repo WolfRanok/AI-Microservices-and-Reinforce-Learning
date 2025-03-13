@@ -6,7 +6,7 @@ import numpy as np
 MS_NUM = 15
 AIMS_NUM = 3
 NODE_NUM = 10
-USER_NUM = 10
+USER_NUM = 20
 RESOURCE = 3
 MA_AIMS_NUM = MS_NUM+AIMS_NUM
 
@@ -169,8 +169,8 @@ def aims_initial():
 # list
 # [USER0,USER1,...]
 def user_initial():
-    x_node = np.loadtxt(open(r"users.CSV"), delimiter=",", skiprows=1, usecols=[1])
-    y_node = np.loadtxt(open(r"users.CSV"), delimiter=",", skiprows=1, usecols=[2])
+    x_node = np.loadtxt(open(r"users_816.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    y_node = np.loadtxt(open(r"users_816.CSV"), delimiter=",", skiprows=1, usecols=[2])
     user_list = []
     for i in range(USER_NUM):
         user_list.append(USER(i,x_node[i],y_node[i]))
@@ -182,9 +182,9 @@ def edge_initial():
     # edge_node_list = []
     # for i in range(NODE_NUM):
     #     edge_node_list.append(EDGE_NODE(i))
-    x_node = np.loadtxt(open("edge_node.CSV"), delimiter=",", skiprows=1, usecols=[1])
+    x_node = np.loadtxt(open("edge_node_125.CSV"), delimiter=",", skiprows=1, usecols=[1])
     x_node = x_node[:NODE_NUM]
-    y_node = np.loadtxt(open("edge_node.CSV"), delimiter=",", skiprows=1, usecols=[2])
+    y_node = np.loadtxt(open("edge_node_125.CSV"), delimiter=",", skiprows=1, usecols=[2])
     y_node = y_node[:NODE_NUM]
     x_mean = sum(x_node) / len(x_node)
     y_mean = sum(y_node) / len(y_node)
