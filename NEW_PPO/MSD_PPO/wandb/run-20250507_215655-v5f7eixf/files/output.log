@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 230, in <module>
+    train(env,args)
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 152, in train
+    agent = PPOAgent(env, args)
+  File "C:\Users\asus\Desktop\NEW_PPO\Agent.py", line 36, in __init__
+    self.actor = network.GNN_Actor(env,args, self.action_dim).to(env.device)
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 148, in __init__
+    self.mlp_feature = MLP_Feature_Extractor(env, args)
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 133, in __init__
+    orthogonal_init(self.mlp_feature1)
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 32, in orthogonal_init
+    nn.init.orthogonal_(layer.weight, gain=gain)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\init.py", line 610, in orthogonal_
+    q, r = torch.linalg.qr(flattened)
+KeyboardInterrupt

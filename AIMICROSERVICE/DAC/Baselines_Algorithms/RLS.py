@@ -13,16 +13,16 @@ from Environment.ENV_DEF import *
 class RLS_Algorithm:
     def option_ms(self):
         """
-        按链部署
+        选择一个微服务进行分配，采用按链部署的策略
         返回-1表示已经全部部署完毕
         :return:MaxIndex
         """
         # index = np.argmax(self.ms_image)
         dep_is_over = True
         index = -1
-        for idx in range(len(self.ms_image)):
-            if self.ms_image[idx] != 0:
-                index = idx % (MA_AIMS_NUM)
+        for i in self.ms_deploy_idx:
+            if self.ms_image[i% (MA_AIMS_NUM)] != 0:
+                index = i % (MA_AIMS_NUM)
                 dep_is_over = False
                 break
         if dep_is_over:

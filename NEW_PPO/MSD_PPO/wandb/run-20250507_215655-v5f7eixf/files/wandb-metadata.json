@@ -1,0 +1,38 @@
+{
+  "os": "Windows-10-10.0.22621-SP0",
+  "python": "CPython 3.10.0",
+  "startedAt": "2025-05-07T13:56:55.733312Z",
+  "program": "C:\\Users\\asus\\Desktop\\NEW_PPO\\main.py",
+  "codePath": "main.py",
+  "email": "2528741508@qq.com",
+  "root": "MSD_PPO",
+  "host": "LAPTOP-U2V2S687",
+  "executable": "D:\\Anaconda\\envs\\MSD_PPO_G\\python.exe",
+  "codePathLocal": "main.py",
+  "cpu_count": 14,
+  "cpu_count_logical": 20,
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "215195389952",
+      "used": "190850678784"
+    }
+  },
+  "memory": {
+    "total": "16788467712"
+  },
+  "cpu": {
+    "count": 14,
+    "countLogical": 20
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "memoryTotal": "8585740288",
+      "cudaCores": 3072,
+      "architecture": "Ada"
+    }
+  ],
+  "cudaVersion": "12.1"
+}

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 231, in <module>
+    train(env,args)
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 194, in train
+    actor_loss, critic_loss, entropy, advantage = agent.update_model(env, args, total_steps)
+  File "C:\Users\asus\Desktop\NEW_PPO\Agent.py", line 100, in update_model
+    self.SIL_buffer.select_high_return_trajectory_data()
+  File "C:\Users\asus\Desktop\NEW_PPO\high_return_replay_buffer.py", line 62, in select_high_return_trajectory_data
+    c_r = sum(self.r)
+TypeError: unsupported operand type(s) for +: 'int' and 'list'

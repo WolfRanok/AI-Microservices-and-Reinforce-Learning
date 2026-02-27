@@ -1,0 +1,15 @@
+{"time":"2025-04-30T17:06:38.4123395+08:00","level":"INFO","msg":"stream: starting","core version":"0.19.9","symlink path":"MSD_PPO\\wandb\\run-20250430_170638-8jlk246f\\logs\\debug-core.log"}
+{"time":"2025-04-30T17:06:39.0171034+08:00","level":"INFO","msg":"created new stream","id":"8jlk246f"}
+{"time":"2025-04-30T17:06:39.0171034+08:00","level":"INFO","msg":"stream: started","id":"8jlk246f"}
+{"time":"2025-04-30T17:06:39.0176455+08:00","level":"INFO","msg":"handler: started","stream_id":"8jlk246f"}
+{"time":"2025-04-30T17:06:39.0176455+08:00","level":"INFO","msg":"sender: started","stream_id":"8jlk246f"}
+{"time":"2025-04-30T17:06:39.0176455+08:00","level":"INFO","msg":"writer: Do: started","stream_id":"8jlk246f"}
+{"time":"2025-04-30T17:06:39.5118233+08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-30T17:08:14.0117374+08:00","level":"INFO","msg":"stream: closing","id":"8jlk246f"}
+{"time":"2025-04-30T17:08:14.0122557+08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-30T17:08:14.0122557+08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-30T17:08:15.4033622+08:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-30T17:08:15.8399147+08:00","level":"INFO","msg":"handler: closed","stream_id":"8jlk246f"}
+{"time":"2025-04-30T17:08:15.8399147+08:00","level":"INFO","msg":"sender: closed","stream_id":"8jlk246f"}
+{"time":"2025-04-30T17:08:15.8399147+08:00","level":"INFO","msg":"writer: Close: closed","stream_id":"8jlk246f"}
+{"time":"2025-04-30T17:08:15.8399147+08:00","level":"INFO","msg":"stream: closed","id":"8jlk246f"}

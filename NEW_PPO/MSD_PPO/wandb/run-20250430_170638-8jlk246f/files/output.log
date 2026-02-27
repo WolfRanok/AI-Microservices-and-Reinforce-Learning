@@ -1,0 +1,42 @@
+Traceback (most recent call last):
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 112, in <module>
+    train(env,args)
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 93, in train
+    actor_loss, critic_loss = agent.update_model(env, total_steps)
+  File "C:\Users\asus\Desktop\NEW_PPO\Agent.py", line 103, in update_model
+    v_s = self.critic(states[index],env)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 203, in forward
+    gnn_feature = torch.cat([torch.cat([self.deployment_feature(state[idx][1]),
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 204, in <listcomp>
+    self.rout_feature(state[idx][2]),
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 90, in forward
+    x = self.conv(x, edge_index)  # 输出形状: [总节点数, 2*hidden_channels]
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch_geometric\nn\conv\gatv2_conv.py", line 290, in forward
+    x_r = self.lin_r(x).view(-1, H, C)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch_geometric\nn\dense\linear.py", line 147, in forward
+    return F.linear(x, self.weight, self.bias)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\fx\traceback.py", line 175, in format_stack
+    return traceback.format_list(traceback.extract_stack()[:-1])
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\traceback.py", line 227, in extract_stack
+    stack = StackSummary.extract(walk_stack(f), limit=limit)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\traceback.py", line 379, in extract
+    linecache.checkcache(filename)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\linecache.py", line 72, in checkcache
+    stat = os.stat(fullname)
+KeyboardInterrupt

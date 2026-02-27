@@ -1,6 +1,6 @@
 import numpy as np
 
-from AIMICROSERVICE.ENV_DEF import *
+from ENV_DEF import *
 
 # 1326
 
@@ -106,7 +106,7 @@ def get_ms_dependency():
         request = requests.get(user)
         pre_ms = request[0].id
         for ms_item in request[1:]:
-            if isinstance(ms_item, MS):
+            if isinstance(ms_item, MS): # 判断ms_item是否是MS（普通微服务）
                 dependency[pre_ms][ms_item.id] = 1
                 pre_ms = ms_item.id
             else:
@@ -366,10 +366,10 @@ def cal_ms_delay(deploy, lamda, ms, node):
         num = int(deploy[ms.id][node.id])
     else:
         ms_proc_delay = Aims_Tolerate_Time
-        alpha = all_ms_alpha[ms.id + AIMS_NUM]
-        if deploy[ms.id + AIMS_NUM][node.id] == 0:
+        alpha = all_ms_alpha[ms.id + MS_NUM]
+        if deploy[ms.id + MS_NUM][node.id] == 0:
             return ms_proc_delay
-        num = int(deploy[ms.id + AIMS_NUM][node.id])
+        num = int(deploy[ms.id + MS_NUM][node.id])
     rh0 = lamda / alpha
     rh1 = lamda / (num * alpha)
     if rh1 > 0.0 and rh1 < 0.99:

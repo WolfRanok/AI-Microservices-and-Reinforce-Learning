@@ -1,0 +1,20 @@
+Actor Grad Norm: 5.1596, Critic Grad Norm: 7.3584
+episode:1, actor_loss: -0.23874561190605165, critic_loss: 0.3873885750770569, entropy: 0.6963001489639282, advantage: 0.20938821032906849
+Actor Grad Norm: 3.9463, Critic Grad Norm: 7.3510
+episode:2, actor_loss: 0.009983142837882042, critic_loss: 0.17689797282218933, entropy: 0.6969786286354065, advantage: -0.03161832369444601
+Traceback (most recent call last):
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 221, in <module>
+    train(env,args)
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 196, in train
+    evaluate_reward, evaluate_sum_delay, rs = evaluate_policy(env, agent)
+  File "C:\Users\asus\Desktop\NEW_PPO\main.py", line 101, in evaluate_policy
+    action = agent.evaluate([s], mark, env)
+  File "C:\Users\asus\Desktop\NEW_PPO\Agent.py", line 70, in evaluate
+    action_probabilities = self.actor(state,ms_mark,env).detach().cpu().numpy().flatten()
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "D:\Anaconda\envs\MSD_PPO_G\lib\site-packages\torch\nn\modules\module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\Users\asus\Desktop\NEW_PPO\network.py", line 187, in forward
+    s_masked_logits = a.masked_fill(action_mask == 0, -1e9)
+RuntimeError: The size of tensor a (14) must match the size of tensor b (10) at non-singleton dimension 1

@@ -5,7 +5,7 @@ import numpy as np
 
 MS_NUM = 15
 AIMS_NUM = 3
-NODE_NUM = 10
+NODE_NUM = 2
 USER_NUM = 20
 RESOURCE = 3
 MA_AIMS_NUM = MS_NUM+AIMS_NUM

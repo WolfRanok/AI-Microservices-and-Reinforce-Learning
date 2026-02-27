@@ -8,16 +8,16 @@ from Environment.ENV_DEF import *
 class FFD_Algorithm:
     def option_ms(self):
         """
-        按链部署
+        选择一个微服务进行分配，采用按链部署的策略
         返回-1表示已经全部部署完毕
         :return:MaxIndex
         """
         # index = np.argmax(self.ms_image)
         dep_is_over = True
         index = -1
-        for idx in range(len(self.ms_image)):
-            if self.ms_image[idx] != 0:
-                index = idx % (MA_AIMS_NUM)
+        for i in self.ms_deploy_idx:
+            if self.ms_image[i% (MA_AIMS_NUM)] != 0:
+                index = i % (MA_AIMS_NUM)
                 dep_is_over = False
                 break
         if dep_is_over:
@@ -62,7 +62,7 @@ class FFD_Algorithm:
 
     def allocate_resources(self, index, state, node):
         """
-        给某一个服务分配资源，若不够用则返回-1
+        给某一个服务分配资源，若不够用则返回False
         :param index: 选择的微服务类型
         :param state: 状态
         :param node: 选择部署的节点
@@ -118,7 +118,7 @@ class FFD_Algorithm:
         # self.analysis_state(self.state, flag=True)  # 查看一下初试状态
         count = 0  # 计数器
         self.resource_list=[[1]*3 for _ in range(NODE_NUM)]  # 初始化每个节点起始的资源未利用率
-        
+
         while True:  # 开始部署
             # 选择待分配的节点
             index = self.option_ms()
@@ -129,7 +129,7 @@ class FFD_Algorithm:
                 break
 
             # 对于指定的微服务选择一个节点进行部署，直到部署成功
-            node_list = list(range(NODE_NUM))  
+            node_list = list(range(NODE_NUM))
             node=-1
             if(index<=MS_NUM-1):
                 score=0
@@ -170,7 +170,7 @@ class FFD_Algorithm:
                         this_score=self.resource_list[i][0]+self.resource_list[i][1]+self.resource_list[i][2]
                         score=max(score,this_score)
                         if this_score>=score:node=i
-                
+
 
         # 分析部署情况,查看一下最终状态
         # self.analysis_state(self.state)
@@ -191,15 +191,19 @@ class FFD_Algorithm:
         :param aims:
         """
         self.ms_image = ms_image.copy()
+
+        for i in range(len(ms_image)):
+            ms_image[i]+=(ms_image[i]+1)*random.choice([0, 1])
+
         self.ms_aims = all_ms
         self.count = 0 # 计数器
         self.ms_deploy_idx = get_ms_deploy_order()
 
+
 if __name__ == '__main__':
     # 获取待分配实例数
     ms_image = get_ms_image()
-    for i in range(len(ms_image)):
-        ms_image[i]+=(ms_image[i]+1)*random.choice([0, 1])
+
 
     # 初始化环境
     ffd = FFD_Algorithm(ms_image, all_ms)

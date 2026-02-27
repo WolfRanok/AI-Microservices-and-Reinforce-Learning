@@ -1,0 +1,1 @@
+{"evaluate_reward":1018.2251704796647,"_timestamp":1.7466800355237598e+09,"_wandb":{"runtime":9083},"critic_loss":0.45294548869132994,"advantage":0.36252758578644434,"entropy":1.7122776508331299,"actor_loss":-0.3822619140148163,"_runtime":8946.583931,"evaluate_delay":36.91830230385697,"_step":65}

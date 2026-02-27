@@ -1,0 +1,23 @@
+2025-05-08 13:52:05,356 INFO    MainThread:78376 [wandb_setup.py:_flush():67] Current SDK version is 0.19.9
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_setup.py:_flush():67] Configure stats pid to 78376
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_setup.py:_flush():67] Loading settings from C:\Users\asus\.config\wandb\settings
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_setup.py:_flush():67] Loading settings from C:\Users\asus\Desktop\NEW_PPO\wandb\settings
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_setup.py:_flush():67] Loading settings from environment variables
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_init.py:setup_run_log_directory():662] Logging user logs to MSD_PPO\wandb\run-20250508_135205-wyh7tx1w\logs\debug.log
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_init.py:setup_run_log_directory():663] Logging internal logs to MSD_PPO\wandb\run-20250508_135205-wyh7tx1w\logs\debug-internal.log
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_init.py:init():781] calling init triggers
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_init.py:init():786] wandb.init called with sweep_config: {}
+config: {'_wandb': {}}
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_init.py:init():809] starting backend
+2025-05-08 13:52:05,357 INFO    MainThread:78376 [wandb_init.py:init():813] sending inform_init request
+2025-05-08 13:52:05,577 INFO    MainThread:78376 [backend.py:_multiprocessing_setup():101] multiprocessing start_methods=spawn, using: spawn
+2025-05-08 13:52:05,577 INFO    MainThread:78376 [wandb_init.py:init():823] backend started and connected
+2025-05-08 13:52:05,578 INFO    MainThread:78376 [wandb_init.py:init():915] updated telemetry
+2025-05-08 13:52:05,578 INFO    MainThread:78376 [wandb_init.py:init():939] communicating run to backend with 90.0 second timeout
+2025-05-08 13:52:06,604 INFO    MainThread:78376 [wandb_init.py:init():1014] starting run threads in backend
+2025-05-08 13:52:06,667 INFO    MainThread:78376 [wandb_run.py:_console_start():2454] atexit reg
+2025-05-08 13:52:06,667 INFO    MainThread:78376 [wandb_run.py:_redirect():2306] redirect: wrap_raw
+2025-05-08 13:52:06,667 INFO    MainThread:78376 [wandb_run.py:_redirect():2371] Wrapping output streams.
+2025-05-08 13:52:06,667 INFO    MainThread:78376 [wandb_run.py:_redirect():2394] Redirects installed.
+2025-05-08 13:52:06,669 INFO    MainThread:78376 [wandb_init.py:init():1056] run started, returning control to user process
+2025-05-08 14:31:12,787 INFO    MsgRouterThr:78376 [mailbox.py:close():129] [no run ID] Closing mailbox, abandoning 1 handles.

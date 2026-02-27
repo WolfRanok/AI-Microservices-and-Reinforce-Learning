@@ -15,12 +15,12 @@ from Environment.NEW_ENV import *
 from Environment.ENV_DEF import *
 
 
-def contrast_Load_balance():
+def contrast_Load_balance(name="125_NODE_NUM-T and Load Balance.json"):
     """
     用于统计负载均衡的种种影响
     :return: Node
     """
-    name = "816_USER_NUM-T and Load Balance.json"
+
     try:
         with open(rf'BA_Data/{name}', 'r+', encoding='utf-8') as f:
             lit = json.load(f)
@@ -82,8 +82,12 @@ def xlsx2csv():
     print("保存成功！")
 
 
-def show_img():
-    url = '816_USER_NUM-T and Load Balance'
+def show_img(url = '816_USER_NUM-T and Load Balance'):
+    """
+    数据可视化
+    :param url:
+    :return:
+    """
     with open(rf'BA_Data/{url}.json', 'r', encoding='utf-8') as f:
         lit = json.load(f)
     y1, y2, y3, x = [], [], [], []
@@ -120,6 +124,6 @@ def show_img():
 
 
 if __name__ == '__main__':
-    contrast_Load_balance()
+    contrast_Load_balance(name="125_NODE_NUM-T and Load Balance.json")
     # xlsx2csv()
-    show_img()
+    # show_img()
