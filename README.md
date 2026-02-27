@@ -1,43 +1,121 @@
 # AI-Microservices-and-Reinforce-Learning
 
-## 项目架构
+## 项目简介
 
-### Baselines Algorithms
+本项目旨在研究基于强化学习（主要为 GNN-PPO 算法）驱动的微服务智能部署与调度，结合边缘计算、AI微服务、资源分配、网络拓扑等多维度场景，支持多种算法对比、环境参数自定义、模型训练与评估、数据可视化等功能。适用于智能边缘计算、微服务调度、AI服务部署等领域的科研与工程实践。
 
-用于定义对比算法
+## 主要功能
+
+- 微服务与AI微服务的环境建模与资源分配
+- 基于图神经网络的强化学习部署策略（GNN-PPO）
+- 多种对比算法（DQN、FFD、随机等）与基线实现
+- 环境参数可配置（服务到达率、服务长度、服务数量等）
+- 支持模型训练、评估、保存与加载
+- 多种数据集与模型文件管理
+- 结果可视化（延迟、资源利用率等）
+
+## 目录结构
+
+```
+AIMICROSERVICE/           # 边缘节点与环境建模相关代码
+Baselines_Algorithms/     # 基线算法（FFD、随机、RLS等）
+Environment/              # 环境定义与数据
+MSdeploy_PPO/             # PPO部署相关代码
+MSD_PPO/                  # PPO算法实现与数据
+NEW_PPO/                  # GNN-PPO主实验模块（推荐入口）
+Unnamed_Algorithm/        # 其他算法实验
+main_test.py              # 测试入口
+README.md                 # 项目说明文档
+```
+
+### NEW_PPO 主要结构
+
+- `Agent.py`：GNN-PPO智能体定义，包含 actor/critic 网络、经验回放等
+- `Arguments.py`：超参数与环境参数解析
+- `Environment.py`：环境建模，用户、微服务、边缘节点、网络拓扑等
+- `network.py`：图神经网络结构（GCN/GAT/LSTM等）
+- `main.py`：主训练流程，模型保存、wandb日志等
+- `evaluate.py`：模型评估与对比
+- `plot/eva_plot.py`：结果可视化脚本
+- `Data/`：训练与评估数据集
+- `Model/`：模型权重文件（actor/critic）
+- `Environmental_parameters/`：环境参数脚本与模型
+- `users.CSV`、`edge_node.CSV`：用户与边缘节点数据
+
+## 主要模块说明
+
+### 环境建模（Environment.py）
+
+- 用户、微服务、AI微服务、边缘节点、网络拓扑等对象建模
+- 支持多种资源类型（CPU、GPU、内存）
+- 微服务请求链生成、到达率、服务长度等参数可配置
+- 网络拓扑自动生成与节点连接
+
+### 智能体与算法（Agent.py、network.py）
+
+- GNN-Actor/Critic 网络，支持图结构输入
+- PPO 算法实现，经验回放、高回报回放、目标网络等
+- 支持 DQN、FFD、随机等多种对比算法
+
+### 参数与数据（Arguments.py、Data/、Environmental_parameters/）
+
+- 超参数解析与环境参数脚本
+- 多组训练/评估数据集，支持不同到达率、服务长度、服务数量等场景
+
+### 训练与评估（main.py、evaluate.py）
+
+- 支持 wandb 日志记录
+- 模型保存与加载
+- 评估脚本支持延迟、资源利用率等指标
+
+### 可视化（plot/eva_plot.py）
+
+- 支持多组实验结果的可视化
+- 延迟、资源利用率等指标曲线展示
+
+## 运行方法
+
+1. 安装依赖（建议使用 Python 3.8+，推荐虚拟环境）
+	```bash
+	pip install torch torch-geometric numpy matplotlib wandb
+	```
+2. 配置参数（可修改 Arguments.py 或 main.py 内部参数）
+3. 训练模型
+	```bash
+	python NEW_PPO/main.py
+	```
+4. 评估模型
+	```bash
+	python NEW_PPO/evaluate.py
+	```
+5. 可视化结果
+	```bash
+	python NEW_PPO/plot/eva_plot.py
+	```
+
+## 数据与模型说明
+
+- `Data/`：包含多组训练与评估数据，命名区分不同参数场景
+- `Model/`：保存多组 actor/critic 权重文件，命名区分不同参数场景
+- `Environmental_parameters/`：支持到达率、服务长度、服务数量等多种环境参数脚本与模型
+
+## 扩展与自定义
+
+- 支持自定义环境参数与微服务类型
+- 可扩展新的算法与网络结构
+- 支持多种资源类型与节点拓扑
+- 可集成更多可视化与评估指标
+
+## 依赖列表
+
+- Python 3.8+
+- torch
+- torch-geometric
+- numpy
+- matplotlib
+- wandb
 
 ---
-
-### Environment
-用于定义环境
-#### ENV_DEF.py
-服务环境：
-
-**定义**：
-
-1. 定义了请求链集合的生成，以及边缘节点的创建方法
-2. 定义用户只发生一个请求链，用户和服务器节点都包含地理位置信息（x,y）
-3. 定义每一个用户有一个请求到达率`lamda`，这个值在[3-6]之间，请求到达率只的是服务强度，即请求发送的频率
-
-**描述**：
-
-1. 每一个请求链有用户生成，包含若干微服务（2-4个）和AI微服务（0-3个）
-2. 每一个微服务需要使用：`cpu`、`memory`(内存)
-3. 每一个AI微服务需要使用：`cpu`、`gpu`、`memory`
-4. 微服务和AI微服务有一定的处理速率`alpha`
-
-
-**函数**：
-1. 使用函数 `get_user_request` 返回：(用户对象列表, 每个用户的有且仅有一个的请求链的集合（字典）, 判定微服务是否为AI微服务的列表)
-2. 使用函数 `edge_initial` 创建边缘节点的列表
-
-#### ENV.py
-
-**定义**:
-
-状态: 由部署方案、资源的可用情况和剩余情况组成。
-
-**函数**：
 
 1. `initial_state()` : 随机初始化一个状态
 2. `get_deploy(state)` : 从状态中获取部署方案
